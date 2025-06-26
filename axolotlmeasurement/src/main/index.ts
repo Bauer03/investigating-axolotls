@@ -1,7 +1,8 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { fileOptions } from '../types'
 
 function createWindow(): void {
   // Create the browser window.
@@ -52,6 +53,16 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
+  ipcMain.handle('file-upload-request', async (event, type: fileOptions) => {
+    const mainWindow = BrowserWindow.fromWebContents(event.sender)
+    if (mainWindow) {
+      const filepaths = await handleUploadRequest(mainWindow, type)
+      // mainWindow.focus() // in case file selection breaks, should work without this but hey
+      return filepaths
+    }
+    return []
+  })
+
   createWindow()
 
   app.on('activate', function () {
@@ -72,3 +83,24 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+async function handleUploadRequest(win: BrowserWindow, type: fileOptions): Promise<string[]> {
+  const options: Electron.OpenDialogOptions =
+    type === 'file'
+      ? {
+          properties: ['openFile', 'multiSelections'],
+          filters: [{ name: 'Images', extensions: ['jpeg', 'jpg', 'png', 'gif'] }]
+        }
+      : {
+          properties: ['openDirectory', 'createDirectory']
+        }
+
+  const result = await dialog.showOpenDialog(win, options)
+
+  if (!result.canceled) {
+    console.log('Picked: ' + result.filePaths)
+    return result.filePaths
+  } else {
+    console.log('User canceled file dialog.')
+    return []
+  }
+}

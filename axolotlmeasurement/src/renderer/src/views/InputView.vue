@@ -1,6 +1,6 @@
 <template>
   <div class="container h-full flx jc-c al-c">
-    <div v-if="!inputImages || inputImages === 0" class="flx col al-c gp2">
+    <div v-if="!imageStore.imageList || imageStore.imageList.length === 0" class="flx col al-c gp2">
       <div>
         <h1>Welcome to MeasuringAxolotls!</h1>
       </div>
@@ -22,17 +22,31 @@
       </div>
     </div>
 
-    <div v-else-if="inputImages > 0">Your images are being displayed here.</div>
+    <div v-else class="flx col al-c gp1">
+      <h2>Preparing {{ imageStore.imageList.length }} images</h2>
+      <div v-for="image in imageStore.imageList" :key="image.path">
+        <span>{{ image.name }}</span>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+// import { ref } from 'vue'
 import { fileOptions } from '../../../types'
-const inputImages = ref<number>()
+import { useImageStore } from '../stores/imageStore'
 
-function requestFileDialog(type: fileOptions): void {
-  alert('req file access' + type)
+const imageStore = useImageStore();
+
+async function requestFileDialog(type: fileOptions): Promise<void> {
+  const filePaths = (await window.api.fileUploadRequest(type)) as string[] | undefined
+
+  if (filePaths && filePaths.length > 0) {
+    console.log('Selected files in renderer:', filePaths)
+    // update state based on files.
+  } else {
+    console.log('No files selected or dialog was canceled.')
+  }
 }
 </script>
 
