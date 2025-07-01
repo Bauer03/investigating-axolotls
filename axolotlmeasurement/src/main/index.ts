@@ -83,6 +83,10 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+/**
+ * Handles "upload file".
+ */
 async function handleUploadRequest(win: BrowserWindow, type: fileOptions): Promise<string[]> {
   const options: Electron.OpenDialogOptions =
     type === 'file'
@@ -104,3 +108,14 @@ async function handleUploadRequest(win: BrowserWindow, type: fileOptions): Promi
     return []
   }
 }
+
+async function handleLoadImages(paths: string[]): Promise<void> {
+  if (paths === undefined) {
+    console.log('Err: Could not find file paths')
+    return
+  }
+
+  // fs.readFile
+}
+
+handleLoadImages(['a']) // will remove just for testing

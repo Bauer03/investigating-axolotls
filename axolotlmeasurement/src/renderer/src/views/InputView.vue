@@ -32,21 +32,54 @@
 </template>
 
 <script setup lang="ts">
-// import { ref } from 'vue'
+import { ref } from 'vue'
 import { fileOptions } from '../../../types'
-import { useImageStore } from '../stores/imageStore'
+import { ImageFile, useImageStore } from '../stores/imageStore'
 
-const imageStore = useImageStore();
+const imageStore = useImageStore()
+let filePaths: string[] | undefined // doesn't need to be a ref, right?
+const isLoading = ref<boolean>(false) // use for loading anim when waiting for image upload
+const successfulFiles = ref<ImageFile[]>([])
+const failedFileCount = ref<number>(0)
 
+/**
+ * Opens dialog for user to select files/folder
+ * @returns Array of user-selected file paths
+ */
 async function requestFileDialog(type: fileOptions): Promise<void> {
-  const filePaths = (await window.api.fileUploadRequest(type)) as string[] | undefined
+  filePaths = (await window.api.fileUploadRequest(type)) as string[] | undefined
 
   if (filePaths && filePaths.length > 0) {
     console.log('Selected files in renderer:', filePaths)
-    // update state based on files.
+    readSelectedFiles(filePaths)
   } else {
-    console.log('No files selected or dialog was canceled.')
+    console.warn('No files selected or dialog was canceled.')
   }
+}
+
+async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
+  isLoading.value = true // handle in ui
+  successfulFiles.value = []
+  failedFileCount.value = 0
+
+  const readPromises = selectedPaths?.map((path) => window.api.fs.readFile(path))
+
+  const results = await Promise.allSettled(readPromises)
+
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      // 'result.value' has the file content
+      successfulFiles.value.push(result.value as unknown as ImageFile) // just temporary lol will fix on next push
+    } else {
+      failedFileCount.value++
+      // logging failed file. surely won't regret this
+      console.error(`Failed to read ${failedFileCount[index]}:`, result.reason) // result.reason shows error
+    }
+  })
+
+  isLoading.value = false
+  await imageStore.addImages(successfulFiles.value)
+  console.log(`Finished. Read ${successfulFiles.value.length} files successfully.`)
 }
 </script>
 

@@ -3,8 +3,15 @@ import { fileOptions } from '../../types'
 
 declare global {
   interface Window {
-    api: {
-      fileUploadRequest: (type: fileOptions) => void
-    }
+    electron: unknown // ... listen i'll add stuff later
+    api: AxolotlAPI
+  }
+}
+
+export interface AxolotlAPI {
+  fileUploadRequest: (type: fileOptions) => Promise<string[]>
+  fs: {
+    readFile: (filePath: string, encoding?: BufferEncoding) => Promise<string>
+    writeFile: (filePath: string, data: string) => Promise<void>
   }
 }

@@ -5,7 +5,7 @@ import Header from './components/Header.vue'
 <template>
   <Header></Header>
   <main class="main-content flx jc-c">
-    <router-view></router-view>
+    <RouterView />
   </main>
 </template>
 
