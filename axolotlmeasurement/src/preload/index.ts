@@ -1,25 +1,45 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { promises as fs } from 'fs'
-// import * as path from 'path'
 import { electronAPI } from '@electron-toolkit/preload'
-import { fileOptions } from '../types' // Assuming you have this type defined
+import { fileOptions, AxolotlAPI } from '../types'
 
-const api = {
+const api: AxolotlAPI = {
   fileUploadRequest: (type: fileOptions): Promise<string[]> =>
     ipcRenderer.invoke('file-upload-request', type),
 
   fs: {
-    // only adding async versions for now, assuming that's all i'll need.
-    readFile: async (filePath: string, encoding: BufferEncoding = 'utf8'): Promise<string> => {
-      // todo: make sure path is in app's user data directory?
-      return fs.readFile(filePath, encoding)
+    readFile: async (filePath: string, encoding?: BufferEncoding): Promise<string | Buffer> => {
+      if (encoding) {
+        return fs.readFile(filePath, encoding)
+      } else {
+        return fs.readFile(filePath)
+      }
     },
 
-    writeFile: async (filePath: string, data: string): Promise<void> => {
-      fs.writeFile(filePath, data)
-    }
+    writeFile: async (filePath: string, data: string | Buffer): Promise<void> => {
+      await fs.writeFile(filePath, data)
+    },
 
-    // may need to add 'exists' function for output file modification later on.
+    readFolder: async (
+      filePaths: string[],
+      encoding?: BufferEncoding
+    ): Promise<string[] | Buffer[]> => {
+      if (encoding) {
+        const readpaths: string[] = []
+        for (const path of filePaths) {
+          const content = await fs.readFile(path, encoding)
+          readpaths.push(content as string)
+        }
+        return readpaths
+      } else {
+        const readpaths: Buffer[] = []
+        for (const path of filePaths) {
+          const content = await fs.readFile(path)
+          readpaths.push(content as Buffer)
+        }
+        return readpaths
+      }
+    }
   }
 }
 
@@ -29,7 +49,7 @@ const api = {
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', api) // 'api' now includes your fs methods!
+    contextBridge.exposeInMainWorld('api', api)
   } catch (error) {
     console.error(error)
   }

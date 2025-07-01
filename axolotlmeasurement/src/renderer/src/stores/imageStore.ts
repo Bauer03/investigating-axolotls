@@ -2,8 +2,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export interface ImageFile {
-  name: string
-  path: string
+  name: string // to display file name (helps user identify files, say in case they want to remove them, or check if one already exists)
+  filePath: string // sent to model for processing. no idea right now if that will require some kind of processing, we'll see.
 }
 
 export const useImageStore = defineStore('imageStore', () => {
@@ -17,5 +17,9 @@ export const useImageStore = defineStore('imageStore', () => {
     imageList.value = []
   }
 
-  return { imageList, addImages, clearImages }
+  function removeImage(path: string): void {
+    imageList.value = imageList.value.filter((image) => image.filePath !== path)
+  }
+
+  return { imageList, addImages, clearImages, removeImage }
 })

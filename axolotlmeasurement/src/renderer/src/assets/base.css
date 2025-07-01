@@ -54,7 +54,7 @@ body {
 
 button {
   border: none;
-  color: var(--bg-col-alt);
+  color: var(--bg-col);
   border-radius: var(--br);
   padding: var(--sp05) var(--sp1);
   cursor: pointer;

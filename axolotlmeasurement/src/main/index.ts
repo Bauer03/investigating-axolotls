@@ -108,14 +108,3 @@ async function handleUploadRequest(win: BrowserWindow, type: fileOptions): Promi
     return []
   }
 }
-
-async function handleLoadImages(paths: string[]): Promise<void> {
-  if (paths === undefined) {
-    console.log('Err: Could not find file paths')
-    return
-  }
-
-  // fs.readFile
-}
-
-handleLoadImages(['a']) // will remove just for testing

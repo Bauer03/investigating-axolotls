@@ -1,5 +1,9 @@
 @import './base.css';
 
+.bg-alt {
+  background-color: var(--bg-col-alt);
+}
+
 .flx {
   display: flex;
 }
@@ -10,6 +14,15 @@
 
 .jc-c {
   justify-content: center;
+}
+
+.jc-sb {
+  justify-content: space-between;
+}
+
+.jc-end {
+  /* justify-content: end; */
+  justify-content: flex-end;
 }
 
 .al-c {
@@ -36,8 +49,13 @@
   gap: var(--sp4);
 }
 
+
 .h-full {
   height: 100%;
+}
+
+.w-full {
+  width: 100%;
 }
 
 .pd05{
@@ -53,6 +71,14 @@
   padding: var(--sp4);
 }
 
+.txt-col {
+  color: var(--txt-col);
+}
+
+.txt-col-alt {
+  color: var(--txt-col-alt);
+}
+
 .txt-c {
   text-align: center;
 }
@@ -64,9 +90,21 @@
   font-style: italic;
 }
 
+.br {
+  border-radius: var(--br);
+}
+
 .accent-btn {
   /* specifically for cta buttons */
   background-color: var(--accent-col);
+  color: var(--bg-col-alt)
+}
+
+.discreet-btn {
+  /* button with border and no bg */
+  background-color: inherit;
+  border: 1px solid var(--bg-col-alt);
+  color: var(--bg-col-alt);
 }
 
 /* default breakpoints for media queries. keeping in case they're relevant, idrk mobile dev */
