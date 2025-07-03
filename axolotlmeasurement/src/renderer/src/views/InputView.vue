@@ -15,7 +15,8 @@
               <span class="material-icons-outlined icon">add_photo_alternate</span>
             </button>
             <button class="accent-btn gp1 flx al-c" @click="requestFileDialog('folder')">
-              <span>Upload folder</span> <span class="material-icons-outlined icon">folder</span>
+              <span>Upload folder [WIP]</span>
+              <span class="material-icons-outlined icon">folder</span>
             </button>
           </div>
         </div>
@@ -31,21 +32,25 @@
             <span class="material-icons-outlined icon">add_photo_alternate</span>
           </button>
           <button class="accent-btn gp1 flx al-c" @click="requestFileDialog('folder')">
-            <span>Upload folder</span> <span class="material-icons-outlined icon">folder</span>
+            <span>Upload folder [WIP]</span>
+            <span class="material-icons-outlined icon">folder</span>
           </button>
         </div>
       </div>
       <div class="flx col pd1 w-full bg-alt selection-container br jc-sb gp05">
-        <div
-          v-for="image in imageStore.imageList"
-          :key="image.filePath"
-          class="flx w-full al-c jc-sb br list-image"
-        >
-          <span>{{ image.name }}</span>
-          <button class="closebtn" @click="removeFile(image.filePath)">
-            <span class="material-icons-outlined icon">close</span>
-          </button>
-        </div>
+        <TransitionGroup name="list">
+          <div
+            v-for="image in imageStore.imageList"
+            :key="image.filePath"
+            class="flx w-full al-c jc-sb br list-image"
+          >
+            <span>{{ image.name }}</span>
+            <!--for some reason, this doesn't look like it's rendering -->
+            <button class="closebtn" @click="removeFile(image.filePath)">
+              <span class="material-icons-outlined icon">close</span>
+            </button>
+          </div>
+        </TransitionGroup>
       </div>
       <div class="flx gp1 w-full jc-end">
         <button class="discreet-btn flx gp1 al-c" @click="clearInput">
@@ -77,6 +82,9 @@ const failedFileCount = ref<number>(0)
 async function requestFileDialog(type: fileOptions): Promise<void> {
   filePaths = (await window.api.fileUploadRequest(type)) as string[] | undefined
 
+  // handle folder case. Since security says I can't just ask for file paths in a folder,
+  // Pass the folder's path to the python backend, and get the list of file paths back.
+
   if (filePaths && filePaths.length > 0) {
     console.log('Selected file paths in renderer:', filePaths)
     readSelectedFiles(filePaths)
@@ -106,6 +114,7 @@ async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
 }
 
 function clearInput(): void {
+  // more stuff may be needed here later on.
   successfulFiles.value = []
   failedFileCount.value = 0
   isLoading.value = false
@@ -149,5 +158,21 @@ function startProcessing(): void {
 
 .biggerxpadding {
   padding: var(--sp1) var(--sp2);
+}
+
+.list-move,
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.5s ease;
+}
+
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+
+.list-leave-active {
+  position: absolute;
 }
 </style>

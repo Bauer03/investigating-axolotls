@@ -11,7 +11,8 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
-    "start": "electron-vite preview",
+    "start": "concurrently \"npm run start-backend\" \"electron-vite preview\"",
+    "start-backend": "cd backend && uvicorn main:app --reload --host localhost --port 8000",
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
@@ -23,8 +24,10 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
+    "concurrently": "^9.2.0",
     "electron-updater": "^6.3.9",
     "pinia": "^3.0.3",
+    "python": "^0.0.4",
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
