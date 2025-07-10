@@ -1,10 +1,10 @@
 export type fileOptions = 'file' | 'folder'
 
 export interface ImageFile {
-  name: string // to display file name (helps user identify files, say in case they want to remove them, or check if one already exists)
-  inputPath: string // sent to model for processing. no idea right now if that will require some kind of processing, we'll see.
-  outputPath: string | undefined // path to output files, for now being determined by python model.
-  distance?: number // this is the main thing we're trying to display in this program.
+  name: string // Not sure whether I need to watch for duplicate images somewhere?
+  inputPath: string // sent to model
+  verified: boolean // no output path is necessary, I can just disregard model output.
+  distance?: number // model doesn't return this for now, this is just futureproofing. fill in manually with pixel distance
   keypoints?: number[] // array containing the coordinates for all keypoints
 }
 

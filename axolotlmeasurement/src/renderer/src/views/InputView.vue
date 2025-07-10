@@ -41,12 +41,12 @@
         <TransitionGroup name="list">
           <div
             v-for="image in imageStore.imageList"
-            :key="image.filePath"
+            :key="image.inputPath"
             class="flx w-full al-c jc-sb br list-image"
           >
             <span>{{ image.name }}</span>
             <!--for some reason, this doesn't look like it's rendering -->
-            <button class="closebtn" @click="removeFile(image.filePath)">
+            <button class="closebtn" @click="removeFile(image.inputPath)">
               <span class="material-icons-outlined icon">close</span>
             </button>
           </div>
@@ -67,7 +67,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { fileOptions } from '../../../types'
-import { ImageFile, useImageStore } from '../stores/imageStore'
+import { useImageStore } from '../stores/imageStore'
+import { ImageFile } from '../../../types'
 
 const imageStore = useImageStore()
 let filePaths: string[] | undefined
@@ -103,7 +104,8 @@ async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
     const fileName = path.split(/[\\/]/).pop() || 'unknown_file' // Handles both Windows and Unix paths, pulled from online.
     successfulFiles.value.push({
       name: fileName,
-      filePath: path
+      inputPath: path,
+      verified: false
     })
   })
 
