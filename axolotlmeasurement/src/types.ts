@@ -1,11 +1,41 @@
 export type fileOptions = 'file' | 'folder'
 
+export type Keypoint = {
+  x: number
+  y: number
+}
+
+export type AxoData = {
+  distance: number
+  keypoints: Keypoint[]
+}
+
 export interface ImageFile {
-  name: string // Not sure whether I need to watch for duplicate images somewhere?
-  inputPath: string // sent to model
-  verified: boolean // no output path is necessary, I can just disregard model output.
-  distance?: number // model doesn't return this for now, this is just futureproofing. fill in manually with pixel distance
-  keypoints?: number[] // array containing the coordinates for all keypoints
+  name: string // may change to uid if poses issues
+  inputPath: string
+  processed: boolean // tracks whether image has been returned from model
+  verified: boolean // tracks user confirmation of model-returned data
+  data?: AxoData
+}
+
+/**
+ * Calculates the Euclidean distance between two keypoints.
+ * Pulled from online.
+ */
+export function calculateDistance(points: Keypoint[]): number {
+  if (points.length < 2) {
+    return 0
+  }
+
+  // Example for two points. This can be adapted to sum the distances
+  // between sequential points if the model returns a series of them.
+  const point1 = points[0]
+  const point2 = points[1]
+
+  const dx = point2.x - point1.x
+  const dy = point2.y - point1.y
+
+  return Math.sqrt(dx * dx + dy * dy)
 }
 
 export interface AxolotlAPI {

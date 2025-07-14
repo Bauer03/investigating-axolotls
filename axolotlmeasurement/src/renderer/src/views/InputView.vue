@@ -105,7 +105,13 @@ async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
     successfulFiles.value.push({
       name: fileName,
       inputPath: path,
-      verified: false
+      verified: false,
+      processed: false,
+      // data empty by default, was tempted to pass in BS data but may as well do this the right way.
+      data: {
+        distance: 0,
+        keypoints: []
+      }
     })
   })
 
@@ -120,7 +126,7 @@ function clearInput(): void {
   successfulFiles.value = []
   failedFileCount.value = 0
   isLoading.value = false
-  imageStore.clearImages()
+  imageStore.clearImages() // may need to be changed? hmm
 }
 
 function removeFile(path: string): void {
@@ -128,7 +134,10 @@ function removeFile(path: string): void {
 }
 
 function startProcessing(): void {
-  console.log('sending images to model')
+  // this function will send the paths to the python backend.
+  imageStore.imageList.forEach((elm) => { // elm.inputPath contains the paths to user-selected files.
+    alert(elm.inputPath)
+  })
 }
 </script>
 
