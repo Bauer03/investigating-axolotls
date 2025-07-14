@@ -122,22 +122,33 @@ async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
 }
 
 function clearInput(): void {
-  // more stuff may be needed here later on.
   successfulFiles.value = []
   failedFileCount.value = 0
   isLoading.value = false
-  imageStore.clearImages() // may need to be changed? hmm
+  imageStore.clearInput()
 }
 
 function removeFile(path: string): void {
+  // hmm may rewrite/remove.
   imageStore.removeImage(path)
 }
 
-function startProcessing(): void {
-  // this function will send the paths to the python backend.
-  imageStore.imageList.forEach((elm) => { // elm.inputPath contains the paths to user-selected files.
-    alert(elm.inputPath)
-  })
+async function startProcessing(): Promise<void> {
+  // is loading set to true
+  const initTime = Date.now()
+  const paths = imageStore.imageList.map((elm) => elm.inputPath)
+  const fileCount = paths.length
+
+  try {
+    const res = await window.api.fs.processImages(paths)
+    const timeTaken = (Date.now() - initTime) / 1000 // in seconds
+
+    console.log('Response from backend:', res)
+    alert(`Processed ${fileCount} images in ${timeTaken.toFixed(2)} seconds.`)
+  } catch (error) {
+    console.error('Error processing images:', error)
+    alert('There was an error processing the images. Please check the console for more details.')
+  }
 }
 </script>
 

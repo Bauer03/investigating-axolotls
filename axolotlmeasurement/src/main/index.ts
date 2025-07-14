@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { fileOptions } from '../types'
+import fetch from 'node-fetch'
 
 function createWindow(): void {
   // Create the browser window.
@@ -61,6 +62,25 @@ app.whenReady().then(() => {
       return filepaths
     }
     return []
+  })
+
+  ipcMain.handle('process-images', async (event, paths: string[]) => {
+    try {
+      const response = await fetch('http://localhost:8001/process-images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ paths: paths })
+      })
+
+      const data = await response.json()
+      console.log('Response from backend:', data)
+      return data
+    } catch (error) {
+      console.error('Error processing images:', error)
+      return { error: 'Failed to process images' }
+    }
   })
 
   createWindow()

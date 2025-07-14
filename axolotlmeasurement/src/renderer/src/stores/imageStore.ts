@@ -17,5 +17,9 @@ export const useImageStore = defineStore('imageStore', () => {
     imageList.value = imageList.value.filter((image) => image.inputPath !== path)
   }
 
-  return { imageList, addImages, clearImages, removeImage }
+  function clearInput(): void {
+    imageList.value = imageList.value.filter((image) => image.processed)
+  }
+
+  return { imageList, addImages, clearImages, removeImage, clearInput }
 })

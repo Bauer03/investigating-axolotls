@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { promises as fs } from 'fs'
 import { electronAPI } from '@electron-toolkit/preload'
-import { fileOptions, AxolotlAPI } from '../types'
+import { fileOptions, AxolotlAPI, AxoData } from '../types'
 
 const api: AxolotlAPI = {
   fileUploadRequest: (type: fileOptions): Promise<string[]> =>
@@ -39,7 +39,10 @@ const api: AxolotlAPI = {
         }
         return readpaths
       }
-    }
+    },
+
+    processImages: (paths: string[]): Promise<AxoData[]> =>
+      ipcRenderer.invoke('process-images', paths)
   }
 }
 

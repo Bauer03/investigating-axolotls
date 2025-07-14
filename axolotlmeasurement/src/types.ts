@@ -44,6 +44,7 @@ export interface AxolotlAPI {
     readFile: (filePath: string, encoding?: BufferEncoding) => Promise<string | Buffer>
     writeFile: (filePath: string, data: string | Buffer) => Promise<void>
     readFolder: (filePaths: string[], encoding?: BufferEncoding) => Promise<string[] | Buffer[]>
+    processImages: (paths: string[]) => Promise<AxoData[]>
   }
 }
 

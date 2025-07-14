@@ -13,8 +13,8 @@
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "start": "concurrently \"npm run start-backend\" \"electron-vite preview\"",
     "start-mac": "concurrently \"npm run start-backend-mac\" \"electron-vite preview\"",
-    "start-backend": "cd src/backend && \"..\\..\\venv\\Scripts\\activate.bat\" && uvicorn main:app --reload --host localhost --port 8001",
-    "start-backend-mac": "cd src/backend && source ../../venv/bin/activate && uvicorn main:app --reload --host localhost --port 8001",
+    "start-backend": "cd src/backend && \"venv\\Scripts\\activate.bat\" && uvicorn main:app --reload --host localhost --port 8001",
+    "start-backend-mac": "cd src/backend && source venv/bin/activate && uvicorn main:app --reload --host localhost --port 8001",
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
@@ -28,6 +28,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "concurrently": "^9.2.0",
     "electron-updater": "^6.3.9",
+    "node-fetch": "^2.7.0",
     "pinia": "^3.0.3",
     "python": "^0.0.4",
     "vue-router": "^4.5.1"

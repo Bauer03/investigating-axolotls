@@ -1,18 +1,21 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware # You'll need this for frontend communication
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
+import subprocess
+import sys
+import os
+import json
 
 app = FastAPI()
 
-# Note: Might be interesting to learn how to send progress updates from fastapi server to frontend - useful for the interface's target audience of someone who isn't tech savvy, and something that's good to know/easy to make look good in CSS
+class ImagePaths(BaseModel):
+    paths: List[str]
 
-# Add CORS middleware for frontend communication (as discussed previously)
 origins = [
     "http://localhost",
     "http://localhost:5173",
-    "file://", # For production builds
-    "*" # remove
+    "file://",
 ]
 
 app.add_middleware(
@@ -27,8 +30,36 @@ app.add_middleware(
 def read_root():
     return {"message": "Welcome to the Axolotl Measurement Backend!"}
 
-@app.get("/data")
-def read_data():
-    return {"message": "not using this endpoint"}
+@app.post("/process-images")
+def process_images(image_paths: ImagePaths):
+    if not image_paths.paths:
+        return {"error": "No image paths provided"}
 
-# @app.post("/process-images")
+    python_executable = sys.executable
+
+    try:
+        # Pass the list of image paths directly to the script
+        result = subprocess.run(
+            [python_executable, "kp_est_01_results.py", *image_paths.paths],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        output_lines = result.stdout.strip().split('\n')
+        json_output_str = output_lines[-1]
+
+        model_data = json.loads(json_output_str)
+
+        print("Model Data:", model_data)
+
+        return {"message": "Images processed successfully!", "data": model_data}
+
+    except subprocess.CalledProcessError as e:
+        print("Error running script:", e.stderr)
+        return {"error": "Failed to process images", "details": e.stderr}
+    except json.JSONDecodeError as e:
+        print("Error decoding JSON from script output:", e)
+        print("Script stdout:", result.stdout)
+        print("Script stderr:", result.stderr)
+        return {"error": "Failed to decode JSON from script output", "details": result.stdout}
