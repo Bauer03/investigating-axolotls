@@ -15,7 +15,7 @@
               <span class="material-icons-outlined icon">add_photo_alternate</span>
             </button>
             <button class="accent-btn gp1 flx al-c" @click="requestFileDialog('folder')">
-              <span>Upload folder [WIP]</span>
+              <span>Upload folder</span>
               <span class="material-icons-outlined icon">folder</span>
             </button>
           </div>
@@ -32,7 +32,7 @@
             <span class="material-icons-outlined icon">add_photo_alternate</span>
           </button>
           <button class="accent-btn gp1 flx al-c" @click="requestFileDialog('folder')">
-            <span>Upload folder [WIP]</span>
+            <span>Upload folder</span>
             <span class="material-icons-outlined icon">folder</span>
           </button>
         </div>
@@ -83,9 +83,6 @@ const failedFileCount = ref<number>(0)
 async function requestFileDialog(type: fileOptions): Promise<void> {
   filePaths = (await window.api.fileUploadRequest(type)) as string[] | undefined
 
-  // handle folder case. Since security says I can't just ask for file paths in a folder,
-  // Pass the folder's path to the python backend, and get the list of file paths back.
-
   if (filePaths && filePaths.length > 0) {
     console.log('Selected file paths in renderer:', filePaths)
     readSelectedFiles(filePaths)
@@ -95,19 +92,26 @@ async function requestFileDialog(type: fileOptions): Promise<void> {
 }
 
 async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
-  isLoading.value = true
-  successfulFiles.value = []
-  failedFileCount.value = 0
+  // using set to prevent duplicate images being uploaded.
+  const existingPaths = new Set(imageStore.imageList.map((image) => image.inputPath))
+  const newPaths = selectedPaths.filter((path) => !existingPaths.has(path))
 
-  // hopefully an efficient way to handle thousands of images being selected, as only using file path + file name, which are pulled from path
-  selectedPaths.forEach((path) => {
-    const fileName = path.split(/[\\/]/).pop() || 'unknown_file' // Handles both Windows and Unix paths, pulled from online.
-    successfulFiles.value.push({
+  if (newPaths.length === 0) {
+    // console.log('All selected files are already in the list.')
+    alert('All images are already uploaded! Ensure your images have unique file names.')
+    return
+  }
+
+  const newFiles: ImageFile[] = []
+
+  // only processing non duplicate paths
+  newPaths.forEach((path) => {
+    const fileName = path.split(/[\\/]/).pop() || 'unknown_file'
+    newFiles.push({
       name: fileName,
       inputPath: path,
       verified: false,
       processed: false,
-      // data empty by default, was tempted to pass in BS data but may as well do this the right way.
       data: {
         distance: 0,
         keypoints: []
@@ -115,10 +119,10 @@ async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
     })
   })
 
-  isLoading.value = false
-  imageStore.addImages(successfulFiles.value)
-  console.log(`Finished. Stored ${successfulFiles.value.length} file paths successfully.`)
-  console.log(successfulFiles.value)
+  imageStore.addImages(newFiles)
+  console.log(
+    `Added ${newFiles.length} new files. Skipped ${selectedPaths.length - newPaths.length} duplicates.`
+  )
 }
 
 function clearInput(): void {

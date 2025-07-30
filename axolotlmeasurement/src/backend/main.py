@@ -12,6 +12,9 @@ app = FastAPI()
 class ImagePaths(BaseModel):
     paths: List[str]
 
+class FolderPath(BaseModel):
+    path: str
+
 origins = [
     "http://localhost",
     "http://localhost:5173",
@@ -63,3 +66,16 @@ def process_images(image_paths: ImagePaths):
         print("Script stdout:", result.stdout)
         print("Script stderr:", result.stderr)
         return {"error": "Failed to decode JSON from script output", "details": result.stdout}
+
+@app.post("/get-folder-contents")
+def process_folder(folder_path: FolderPath):
+    if not folder_path.path or not os.path.isdir(folder_path.path):
+        return {"error": "No valid folder provided"}
+
+    full_paths = []
+    for item in os.listdir(folder_path.path):
+        item_path = os.path.join(folder_path.path, item)
+        if os.path.isfile(item_path):
+            full_paths.append(item_path)
+
+    return full_paths

@@ -58,7 +58,7 @@ app.whenReady().then(() => {
     const mainWindow = BrowserWindow.fromWebContents(event.sender)
     if (mainWindow) {
       const filepaths = await handleUploadRequest(mainWindow, type)
-      // mainWindow.focus() // in case file selection breaks, should work without this but hey
+      mainWindow.focus() // in case file selection removes focus
       return filepaths
     }
     return []
@@ -121,10 +121,51 @@ async function handleUploadRequest(win: BrowserWindow, type: fileOptions): Promi
   const result = await dialog.showOpenDialog(win, options)
 
   if (!result.canceled) {
-    console.log('Picked: ' + result.filePaths)
-    return result.filePaths
+    if (type === 'file') {
+      console.log('Picked: ' + result.filePaths)
+      return result.filePaths
+    } else {
+      let filePaths: string[] = []
+      try {
+        filePaths = await requestFolderContents(result.filePaths[0]) // assuming this is the way to get a folder's path lol
+        return filePaths
+      } catch (error) {
+        console.error('Error getting file paths from folder: ' + error)
+        return []
+      }
+    }
   } else {
     console.log('User canceled file dialog.')
-    return []
+  }
+  return []
+}
+
+// async function handleProcessedImage() {
+// hmm don't think i actually need this but leaving for train of thought
+// }
+
+/**
+ * Passes in folder path to python server, returns file paths in that folder if they exist.
+ */
+async function requestFolderContents(folderPath: string): Promise<string[]> {
+  try {
+    const response = await fetch('http://localhost:8001/get-folder-contents', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ path: folderPath })
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`)
+    }
+
+    const filePaths: string[] = await response.json()
+    console.log('Backend returned files: ', filePaths)
+    return filePaths
+  } catch (error) {
+    console.error('Error getting folder contents: ', error)
+    throw error
   }
 }
