@@ -111,11 +111,7 @@ async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
       name: fileName,
       inputPath: path,
       verified: false,
-      processed: false,
-      data: {
-        distance: 0,
-        keypoints: []
-      }
+      processed: false // data will be added during model-processing step.
     })
   })
 
@@ -138,7 +134,7 @@ function removeFile(path: string): void {
 }
 
 async function startProcessing(): Promise<void> {
-  // is loading set to true
+  isLoading.value = true
   const initTime = Date.now()
   const paths = imageStore.imageList.map((elm) => elm.inputPath)
   const fileCount = paths.length
@@ -149,6 +145,9 @@ async function startProcessing(): Promise<void> {
 
     console.log('Response from backend:', res)
     alert(`Processed ${fileCount} images in ${timeTaken.toFixed(2)} seconds.`)
+    isLoading.value = false
+    // handle updating image store with the data returned by the model/server.
+    // this should happen pretty quickly.
   } catch (error) {
     console.error('Error processing images:', error)
     alert('There was an error processing the images. Please check the console for more details.')
