@@ -76,7 +76,7 @@ app.whenReady().then(() => {
 
       const data = await response.json()
       console.log('Response from backend:', data)
-      return data
+      return data.data
     } catch (error) {
       console.error('Error processing images:', error)
       return { error: 'Failed to process images' }
@@ -120,6 +120,8 @@ async function handleUploadRequest(win: BrowserWindow, type: fileOptions): Promi
 
   const result = await dialog.showOpenDialog(win, options)
 
+  // note that I'm allowing the user to send an image through the model multiple times, since this might be an intended behavior.
+  // this doens't mean you can select the same image multiple times - that's being prevented.
   if (!result.canceled) {
     if (type === 'file') {
       console.log('Picked: ' + result.filePaths)

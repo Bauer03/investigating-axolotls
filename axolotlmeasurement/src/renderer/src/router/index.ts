@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import InputView from '../views/InputView.vue'
+import OutputView from '../views/OutputView.vue'
 
 const routes = [
   {
@@ -10,7 +11,20 @@ const routes = [
   {
     path: '/output',
     name: 'Output',
-    component: () => import('../views/OutputView.vue') // trying this out for performance, since output view can end up holding thousands of images.
+    component: OutputView,
+    children: [
+      // Importing these dynamically for optimization hopefully.
+      {
+        path: 'validate',
+        name: 'OutputValidate',
+        component: () => import('../views/ValidateView.vue')
+      },
+      {
+        path: 'gallery',
+        name: 'OutputGallery',
+        component: () => import('../views/GalleryView.vue')
+      }
+    ]
   }
 ]
 

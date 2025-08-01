@@ -8,9 +8,11 @@
   </div>
 
   <div v-else class="flx col">
-    <div v-for="image in processedImages" :key="image.inputPath">
-      <span>Image name is {{ image.data?.image_name }}</span>
+    <div class="header flx pd05 gp05">
+      <router-link to="/validate">Validate</router-link>
+      <router-link to="/gallery">Gallery</router-link>
     </div>
+    <router-view />
   </div>
 </template>
 
@@ -26,10 +28,34 @@ const processedImages = computed(() => {
     return img.processed && !img.verified
   })
 })
+
+// will implement later maybe idek
+// function newSelectedImage(newImg: ImageFile): void {
+//   if (newImg) {
+//     selectedImage.value = newImg
+//   }
+// }
 </script>
 
 <style scoped>
 .container {
   max-width: 500px;
+}
+.header {
+  align-items: center;
+  background-color: var(--bg-col-alt);
+  width: min-content;
+  border-radius: var(--br);
+
+  a {
+    font-size: var(--fs-lg);
+    background-color: var(--bg-col-soft);
+    color: var(--bg-col);
+    padding: var(--sp1) var(--sp2);
+    border-radius: var(--br);
+    cursor: pointer;
+    user-select: none;
+    align-items: center;
+  }
 }
 </style>

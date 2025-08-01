@@ -1,0 +1,47 @@
+<template>
+  <div class="content flx gp1">
+    <div class="validate-left">
+      <div v-for="image in processedImages" :key="image.inputPath" @click="newSelectedImage(image)">
+        <span>Image name is {{ image.data?.image_name }}</span>
+      </div>
+    </div>
+    <div class="validate-right flx col gp1">
+      <img
+        :src="selectedImage?.inputPath || 'icon.png'"
+        alt="Preview of model's keypoint distribution"
+        class="validate-preview"
+      />
+      <div class="validation-controls flx gp1">
+        <button class="flx gp05 discreet-btn">
+          <span class="material-icons-outlined">edit</span>
+          Edit Keypoints
+        </button>
+        <button class="flx gp05 accent-btn">
+          <span class="material-icons-outlined">check</span>
+          Validate Image
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+<script lang="ts">
+import { useImageStore } from '../stores/imageStore'
+import { ImageFile } from 'src/types'
+import { computed, ref } from 'vue'
+
+const imageStore = useImageStore()
+const selectedImage = ref<ImageFile | null>(null)
+
+// TODO: add global indicator that there are images to validate. that way, i can easily separate validate view from output view.
+const processedImages = computed(() => {
+  return imageStore.imageList.filter((img: ImageFile) => {
+    return img.processed && !img.verified
+  })
+})
+
+function newSelectedImage(newImg: ImageFile): void {
+  if (newImg) {
+    selectedImage.value = newImg
+  }
+}
+</script>

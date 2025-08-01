@@ -66,12 +66,14 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { fileOptions } from '../../../types'
+import { useRouter } from 'vue-router'
+import { fileOptions, ProcessSuccess, ProcessError } from '../../../types'
 import { useImageStore } from '../stores/imageStore'
 import { ImageFile } from '../../../types'
 
 const imageStore = useImageStore()
 let filePaths: string[] | undefined
+const router = useRouter()
 const isLoading = ref<boolean>(false)
 const successfulFiles = ref<ImageFile[]>([])
 const failedFileCount = ref<number>(0)
@@ -142,7 +144,7 @@ async function startProcessing(): Promise<void> {
   const fileCount = paths.length
 
   try {
-    const res = await window.api.fs.processImages(paths)
+    const res: ProcessSuccess | ProcessError = await window.api.fs.processImages(paths)
     const timeTaken = (Date.now() - initTime) / 1000
 
     if ('error' in res) {
@@ -151,7 +153,11 @@ async function startProcessing(): Promise<void> {
     console.log('Response from backend:', res)
     imageStore.bulkUpdateProcessedImages(res.data)
 
+    // set this sto be something which is mort improtant.
     alert(`Processed ${fileCount} images in ${timeTaken.toFixed(2)} seconds.`)
+
+
+    router.push('Output') // sending to view results of their operation by default, I feel this is intuitive.
   } catch (error) {
     console.error('Error processing images:', error)
     alert('There was an error processing the images. Please check the console for more details.')

@@ -54,7 +54,7 @@ def process_images(image_paths: ImagePaths):
 
         model_data = json.loads(json_output_str)
 
-        print("Model Data:", model_data)
+        # print("Model Data:", model_data)
 
         return {"message": "Images processed successfully!", "data": model_data}
 

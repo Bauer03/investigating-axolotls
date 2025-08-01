@@ -2,6 +2,7 @@
   /* colors */
   --bg-col: rgb(52, 37, 59);
   --bg-col-alt: rgb(249, 242, 255);
+  --bg-col-soft: rgb(185, 185, 185);
   --txt-col: var(--bg-col-alt);
   --txt-col-alt: var(--bg-col);
   --accent-col: rgb(228, 113, 36);
@@ -59,6 +60,7 @@ button {
   padding: var(--sp05) var(--sp1);
   cursor: pointer;
   user-select: none;
+  align-items: center;
 }
 
 ul {
