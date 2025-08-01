@@ -1,16 +1,39 @@
 export type fileOptions = 'file' | 'folder'
 
+// src/types.ts
+
 export type AxoData = {
   image_name: string
-  bounding_box: [number[]]
-  keypoints: [number[]]
+  bounding_box: number[][]
+  keypoints: number[][]
+}
+
+export type ProcessSuccess = {
+  // probably overcomplicating things but lets me clearly see if i have a problem
+  message: string
+  data: AxoData[]
+}
+
+export type ProcessError = {
+  error: string
+  details?: string
+}
+
+export interface AxolotlAPI {
+  fileUploadRequest: (type: fileOptions) => Promise<string[]>
+  fs: {
+    readFile: (filePath: string, encoding?: BufferEncoding) => Promise<string | Buffer>
+    writeFile: (filePath: string, data: string | Buffer) => Promise<void>
+    readFolder: (filePaths: string[], encoding?: BufferEncoding) => Promise<string[] | Buffer[]>
+    processImages: (paths: string[]) => Promise<ProcessSuccess | ProcessError>
+  }
 }
 
 export interface ImageFile {
-  name: string // may change to uid if poses issues
+  name: string
   inputPath: string
-  processed: boolean // tracks whether image has been returned from model. set to true after image returned from model.
-  verified: boolean // tracks user confirmation of model-returned data. set to true after user clicks validate image.
+  processed: boolean
+  verified: boolean
   data?: AxoData
 }
 
@@ -33,16 +56,6 @@ export interface ImageFile {
 
 //   return Math.sqrt(dx * dx + dy * dy)
 // }
-
-export interface AxolotlAPI {
-  fileUploadRequest: (type: fileOptions) => Promise<string[]>
-  fs: {
-    readFile: (filePath: string, encoding?: BufferEncoding) => Promise<string | Buffer>
-    writeFile: (filePath: string, data: string | Buffer) => Promise<void>
-    readFolder: (filePaths: string[], encoding?: BufferEncoding) => Promise<string[] | Buffer[]>
-    processImages: (paths: string[]) => Promise<AxoData[]>
-  }
-}
 
 declare global {
   interface Window {

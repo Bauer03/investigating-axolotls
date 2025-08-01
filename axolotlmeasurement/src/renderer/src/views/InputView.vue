@@ -133,6 +133,8 @@ function removeFile(path: string): void {
   imageStore.removeImage(path)
 }
 
+// in InputView.vue
+
 async function startProcessing(): Promise<void> {
   isLoading.value = true
   const initTime = Date.now()
@@ -141,16 +143,20 @@ async function startProcessing(): Promise<void> {
 
   try {
     const res = await window.api.fs.processImages(paths)
-    const timeTaken = (Date.now() - initTime) / 1000 // in seconds
+    const timeTaken = (Date.now() - initTime) / 1000
 
+    if ('error' in res) {
+      throw new Error(res.error)
+    }
     console.log('Response from backend:', res)
+    imageStore.bulkUpdateProcessedImages(res.data)
+
     alert(`Processed ${fileCount} images in ${timeTaken.toFixed(2)} seconds.`)
-    isLoading.value = false
-    // handle updating image store with the data returned by the model/server.
-    // this should happen pretty quickly.
   } catch (error) {
     console.error('Error processing images:', error)
     alert('There was an error processing the images. Please check the console for more details.')
+  } finally {
+    isLoading.value = false
   }
 }
 </script>

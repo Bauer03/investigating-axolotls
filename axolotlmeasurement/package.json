@@ -13,7 +13,7 @@
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "start": "concurrently \"npm run start-backend\" \"electron-vite preview\"",
     "start-mac": "concurrently \"npm run start-backend-mac\" \"electron-vite preview\"",
-    "start-backend": "cd src/backend && \"venv\\Scripts\\activate.bat\" && uvicorn main:app --reload --host localhost --port 8001",
+    "start-backend": "cd src/backend && \"venv\\Scripts\\activate\" && uvicorn main:app --reload --host localhost --port 8001",
     "start-backend-mac": "cd src/backend && source venv/bin/activate && uvicorn main:app --reload --host localhost --port 8001",
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
