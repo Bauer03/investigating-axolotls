@@ -5,16 +5,14 @@ import sys
 import json
 
 # --- Path Refactoring ---
-# This is well done and robust. No changes needed.
 script_dir = Path(__file__).resolve().parent
 project_root = script_dir.parents[1]
 model_path = project_root / 'resources' / 'best.pt'
 
-# Initialize the YOLO model
+# --- Initialize Calvin's YOLO model ---
 model = YOLO(model_path)
 
 # --- Handling Input/Output ---
-
 if len(sys.argv) < 2:
     # Print usage instructions to stderr
     print("Usage: python kp_est_01_results.py <image_path_1> <image_path_2> ...", file=sys.stderr)

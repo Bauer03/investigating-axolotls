@@ -8,8 +8,8 @@ export type AxoData = {
   keypoints: number[][]
 }
 
+// probably overcomplicating things but lets me clearly see if i have a problem
 export type ProcessSuccess = {
-  // probably overcomplicating things but lets me clearly see if i have a problem
   message: string
   data: AxoData[]
 }
@@ -35,6 +35,10 @@ export interface ImageFile {
   processed: boolean
   verified: boolean
   data?: AxoData
+}
+
+export type StoreSchema = {
+  images: ImageFile[]
 }
 
 /**

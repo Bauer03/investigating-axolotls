@@ -156,7 +156,6 @@ async function startProcessing(): Promise<void> {
     // set this sto be something which is mort improtant.
     alert(`Processed ${fileCount} images in ${timeTaken.toFixed(2)} seconds.`)
 
-
     router.push('Output') // sending to view results of their operation by default, I feel this is intuitive.
   } catch (error) {
     console.error('Error processing images:', error)

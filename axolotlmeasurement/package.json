@@ -27,6 +27,7 @@
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
     "concurrently": "^9.2.0",
+    "electron-store": "^10.1.0",
     "electron-updater": "^6.3.9",
     "node-fetch": "^2.7.0",
     "pinia": "^3.0.3",

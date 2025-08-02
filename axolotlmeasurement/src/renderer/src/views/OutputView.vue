@@ -28,13 +28,6 @@ const processedImages = computed(() => {
     return img.processed && !img.verified
   })
 })
-
-// will implement later maybe idek
-// function newSelectedImage(newImg: ImageFile): void {
-//   if (newImg) {
-//     selectedImage.value = newImg
-//   }
-// }
 </script>
 
 <style scoped>

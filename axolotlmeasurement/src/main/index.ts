@@ -4,6 +4,21 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { fileOptions } from '../types'
 import fetch from 'node-fetch'
+import Store from 'electron-store'
+
+const store = new Store()
+
+// Example of storing data
+ipcMain.handle('save-image-data', (event, imageData) => {
+  const images = store.get('images', [])
+  images.push(imageData)
+  store.set('images', images)
+})
+
+// Example of retrieving data
+ipcMain.handle('get-image-data', () => {
+  return store.get('images', [])
+})
 
 function createWindow(): void {
   // Create the browser window.
