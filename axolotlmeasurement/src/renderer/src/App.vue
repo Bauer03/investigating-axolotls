@@ -7,7 +7,8 @@ const imageStore = useImageStore()
 
 onMounted(async () => {
   const allImages = await window.api.getDBImages()
-  imageStore.addImages(allImages)
+  await imageStore.addImages(allImages)
+  await imageStore.loadExistingImages()
 })
 </script>
 

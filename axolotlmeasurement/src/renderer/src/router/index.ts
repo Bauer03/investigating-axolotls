@@ -1,6 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import InputView from '../views/InputView.vue'
-import OutputView from '../views/OutputView.vue'
 
 const routes = [
   {
@@ -9,21 +8,14 @@ const routes = [
     component: InputView
   },
   {
-    path: '/output/',
-    name: 'Output',
-    component: OutputView,
-    children: [
-      {
-        path: 'validate',
-        name: 'Validate',
-        component: () => import('../views/ValidateView.vue')
-      },
-      {
-        path: 'gallery',
-        name: 'Gallery',
-        component: () => import('../views/GalleryView.vue')
-      }
-    ]
+    path: '/validate',
+    name: 'Validate',
+    component: () => import('../views/ValidateView.vue')
+  },
+  {
+    path: '/gallery',
+    name: 'Gallery',
+    component: () => import('../views/GalleryView.vue')
   }
 ]
 

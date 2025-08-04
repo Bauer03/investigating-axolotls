@@ -1,16 +1,58 @@
 // src/renderer/src/stores/imageStore.ts
 
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { ImageFile, AxoData } from 'src/types'
 
 export const useImageStore = defineStore('imageStore', () => {
   const imageList = ref<ImageFile[]>([])
+  const selectedImagePath = ref<string | null>(null)
 
-  function addImages(files: ImageFile[]): void {
-    // You should also call the DB to add these images here
-    // For each file in files -> window.electronAPI.addImage(file)
-    imageList.value = [...imageList.value, ...files]
+  async function addImages(files: ImageFile[]): Promise<void> {
+    const successfullyAdded: ImageFile[] = []
+
+    for (const file of files) {
+      try {
+        await window.api.addDBImage(file)
+        successfullyAdded.push(file)
+      } catch (error: unknown) {
+        if (
+          typeof error === 'object' &&
+          error !== null &&
+          'message' in error &&
+          typeof (error as { message?: string }).message === 'string' &&
+          (error as { message?: string }).message?.includes('UNIQUE constraint failed')
+        ) {
+          console.log(`Image ${file.inputPath} already exists in database, skipping.`)
+        } else {
+          console.error(`Failed to add image ${file.inputPath}:`, error)
+        }
+      }
+    }
+
+    // Only add successfully inserted images to the local state
+    if (successfullyAdded.length > 0) {
+      const currentPaths = new Set(imageList.value.map((img) => img.inputPath))
+      const newFilesToAdd = successfullyAdded.filter((file) => !currentPaths.has(file.inputPath))
+      imageList.value = [...imageList.value, ...newFilesToAdd]
+    }
+  }
+
+  const selectedImage = computed(() => {
+    if (!selectedImagePath.value) {
+      // no path selected means no selected image
+      return null
+    }
+    // find image in imagelist using path
+    return imageList.value.find((image) => image.inputPath === selectedImagePath.value) || null
+  })
+
+  function selectImage(path: string): void {
+    selectedImagePath.value = path
+  }
+
+  function unselectImage(): void {
+    selectedImagePath.value = null
   }
 
   // delete single image. Just needs path to work right.
@@ -90,7 +132,17 @@ export const useImageStore = defineStore('imageStore', () => {
     }
   }
 
+  async function loadExistingImages(): Promise<void> {
+    try {
+      const existingImages = await window.api.getDBImages()
+      imageList.value = existingImages
+    } catch (error) {
+      console.error('Failed to load existing images:', error)
+    }
+  }
+
   return {
+    loadExistingImages,
     imageList,
     addImages,
     removeImage,
@@ -98,6 +150,9 @@ export const useImageStore = defineStore('imageStore', () => {
     updateImageVerification,
     clearAllInputImages,
     clearValidationList,
-    clearGallery
+    clearGallery,
+    selectImage,
+    selectedImage,
+    unselectImage
   }
 })

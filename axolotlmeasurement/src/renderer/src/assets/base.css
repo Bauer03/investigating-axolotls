@@ -2,7 +2,7 @@
   /* colors */
   --bg-col: rgb(52, 37, 59);
   --bg-col-alt: rgb(249, 242, 255);
-  --bg-col-soft: rgb(185, 185, 185);
+  --bg-col-soft: rgba(185, 185, 185, 0.623);
   --txt-col: var(--bg-col-alt);
   --txt-col-alt: var(--bg-col);
   --accent-col: rgb(228, 113, 36);
@@ -14,7 +14,7 @@
   --sp1: 1rem;
   --sp2: 2rem;
   --sp4: 4rem;
-  --br: 0.5rem;
+  --br: 1rem;
 
   /* font */
   --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -36,6 +36,7 @@ html {
 
 body {
   margin: 0;
+  padding: var(--sp1) var(--sp1);
   height: 100%;
   color: var(--txt-col);
   background: var(--bg-col);

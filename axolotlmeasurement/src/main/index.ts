@@ -105,8 +105,8 @@ app.whenReady().then(() => {
       .all()
       .map((img) => ({
         ...img,
-        processed: Boolean(img.processed), // aaaargh
-        verified: Boolean(img.verified), // january 2035
+        processed: Boolean(img.processed), // man it really hurts to have to do this i'm not sure if it's good convention
+        verified: Boolean(img.verified),
         data: { keypoints: JSON.parse(img.keypoints || '[]') }
       }))
   })
@@ -116,21 +116,19 @@ app.whenReady().then(() => {
     const stmt = db.prepare(
       'INSERT INTO images (name, inputPath, processed, verified, keypoints) VALUES (?, ?, ?, ?, ?)'
     )
-    // Keypoints stored as JSON string
-    stmt.run(
-      image.name,
-      image.inputPath,
-      image.processed ? 1 : 0, // Convert boolean to integer, sqlite can't take bool for some reasaon
-      image.verified ? 1 : 0, // same here
-      JSON.stringify(image.data.keypoints)
-    )
+    // Convert boolean 'false' to integer '0' for SQLite
+    const result = stmt.run(image.name, image.inputPath, 0, 0, '[]') // <--- Corrected line
+    console.log(`[DATABASE] Added image: ${image.name}`, result)
+    return result
   })
 
   // Singe image deletion
   ipcMain.handle('db:delete-image', (event, inputPath: string) => {
     const stmt = db.prepare('DELETE FROM images WHERE inputPath = ?')
     const result = stmt.run(inputPath)
-    // result.changes will be 1 if a row was deleted, 0 otherwise.
+    if (result.changes > 0) {
+      console.log(`[DATABASE] Deleted image: ${inputPath}`) // DEBUG
+    }
     return result.changes > 0
   })
 
@@ -157,7 +155,11 @@ app.whenReady().then(() => {
     const query = `DELETE FROM images ${whereClause}`
     const stmt = db.prepare(query)
     const result = stmt.run(...params)
-
+    console.log(
+      `[DATABASE] Bulk delete finished. Criteria:`,
+      criteria,
+      `Deleted rows: ${result.changes}`
+    ) // DEBUG
     return result.changes
   })
 
@@ -182,9 +184,24 @@ app.whenReady().then(() => {
 
     const query = `UPDATE images SET ${setClauses} WHERE inputPath = ?`
     const stmt = db.prepare(query)
-    const result = stmt.run(...params, inputPath) // inputPath is the last param for the WHERE clause
-
+    const result = stmt.run(...params, inputPath)
+    console.log(`[DATABASE] Updated image: ${inputPath} with`, data) // DEBUG
     return result.changes
+  })
+
+  // Prints contents of sqlite3 database
+  ipcMain.handle('debug:dump-db', () => {
+    console.log('[DEBUG] Dumping all database contents...')
+    try {
+      const rows = db.prepare('SELECT * FROM images').all()
+      if (rows.length > 0) {
+        console.table(rows) // console.table is great for arrays of objects
+      } else {
+        console.log('[DEBUG] Database table "images" is empty.')
+      }
+    } catch (error) {
+      console.error('[DEBUG] Failed to dump database:', error)
+    }
   })
 
   createWindow()

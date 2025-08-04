@@ -1,12 +1,12 @@
 <template>
   <div class="container h-full flx jc-c al-c">
     <div v-if="!imageStore.imageList || imageStore.imageList.length === 0" class="flx col al-c gp2">
-      <div>
-        <h1>Welcome to MeasuringAxolotls!</h1>
+      <div class="pd4">
+        <h1 class="txt-c">Welcome to MeasuringAxolotls!</h1>
       </div>
       <div class="flx col gp1">
-        <span>Upload images to get started.</span>
-        <div class="draganddrop flx col al-c gp1 pd2">
+        <span class="txt-c">Upload images to get started.</span>
+        <div class="draganddrop glass-panel flx col al-c gp1 pd2">
           <span>Drag and drop images/folders here (TODO)</span>
           <span>or</span>
           <div class="flx gp1">
@@ -23,9 +23,9 @@
       </div>
     </div>
 
-    <div v-else class="flx col al-c gp1">
-      <div class="flx al-c jc-sb bg-alt w-full br gp4 biggerxpadding">
-        <h3 class="txt-col-alt">Preparing {{ imageStore.imageList.length }} images</h3>
+    <div v-else class="flx col al-c gp1 w-full">
+      <div class="flx al-c jc-sb glass-container-solid w-full gp4 biggerxpadding">
+        <h3 class="txt-col">Preparing {{ imageStore.imageList.length }} images</h3>
         <div class="flx gp1">
           <button class="accent-btn gp1 flx al-c" @click="requestFileDialog('file')">
             <span>Upload image</span>
@@ -37,21 +37,22 @@
           </button>
         </div>
       </div>
-      <div class="flx col pd1 w-full bg-alt selection-container br jc-sb gp05">
+
+      <div class="glass-selection flx col pd1 w-full selection-container br jc-sb gp05">
         <TransitionGroup name="list">
           <div
             v-for="image in imageStore.imageList"
             :key="image.inputPath"
-            class="flx w-full al-c jc-sb br list-image"
+            class="glass-list-item flx w-full al-c jc-sb list-image"
           >
             <span>{{ image.name }}</span>
-            <!--for some reason, this doesn't look like it's rendering -->
             <button class="closebtn" @click="removeFile(image.inputPath)">
               <span class="material-icons-outlined icon">close</span>
             </button>
           </div>
         </TransitionGroup>
       </div>
+
       <div class="flx gp1 w-full jc-end">
         <button class="discreet-btn flx gp1 al-c" @click="clearInput">
           <span>Reset input</span><span class="material-icons-outlined icon">delete</span>
@@ -212,7 +213,7 @@ async function startProcessing(): Promise<void> {
 }
 
 .selection-container {
-  max-height: 50vh;
+  /* max-height: 50vh; */
   overflow-y: scroll;
   scrollbar-gutter: stable;
   scrollbar-track-color: none;

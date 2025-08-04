@@ -38,7 +38,9 @@ export interface AxolotlAPI {
   deleteImage(inputPath: string): Promise<boolean>
   deleteImagesWhere: (criteria: DeletionCriteria) => Promise<number>
   updateImage: (inputPath: string, data: ImageUpdateData) => Promise<number>
-
+  debug: {
+    dumpDB: () => Promise<unknown>
+  }
   fs: {
     readFile: (filePath: string, encoding?: BufferEncoding) => Promise<string | Buffer>
     writeFile: (filePath: string, data: string | Buffer) => Promise<void>

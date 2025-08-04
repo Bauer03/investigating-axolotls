@@ -9,6 +9,8 @@ const api: AxolotlAPI = {
   deleteImagesWhere: (criteria) => ipcRenderer.invoke('db:delete-images-where', criteria),
   deleteImage: (inputPath) => ipcRenderer.invoke('db:delete-image', inputPath),
   updateImage: (inputPath, data) => ipcRenderer.invoke('db:update-image', inputPath, data),
+  debug: { dumpDB: () => ipcRenderer.invoke('debug:dump-db') },
+
   fileUploadRequest: (type: fileOptions): Promise<string[]> =>
     ipcRenderer.invoke('file-upload-request', type),
 
