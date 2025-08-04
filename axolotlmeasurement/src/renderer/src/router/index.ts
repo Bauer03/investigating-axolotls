@@ -9,19 +9,18 @@ const routes = [
     component: InputView
   },
   {
-    path: '/output',
+    path: '/output/',
     name: 'Output',
     component: OutputView,
     children: [
-      // Importing these dynamically for optimization hopefully.
       {
         path: 'validate',
-        name: 'OutputValidate',
+        name: 'Validate',
         component: () => import('../views/ValidateView.vue')
       },
       {
         path: 'gallery',
-        name: 'OutputGallery',
+        name: 'Gallery',
         component: () => import('../views/GalleryView.vue')
       }
     ]

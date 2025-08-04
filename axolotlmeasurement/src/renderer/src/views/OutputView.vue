@@ -9,8 +9,8 @@
 
   <div v-else class="flx col">
     <div class="header flx pd05 gp05">
-      <router-link to="/validate">Validate</router-link>
-      <router-link to="/gallery">Gallery</router-link>
+      <router-link to="../output/validate">Validate</router-link>
+      <router-link to="../output/gallery">Gallery</router-link>
     </div>
     <router-view />
   </div>

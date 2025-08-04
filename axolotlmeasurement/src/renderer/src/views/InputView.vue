@@ -7,7 +7,7 @@
       <div class="flx col gp1">
         <span>Upload images to get started.</span>
         <div class="draganddrop flx col al-c gp1 pd2">
-          <span>Drag and drop images/folders here</span>
+          <span>Drag and drop images/folders here (TODO)</span>
           <span>or</span>
           <div class="flx gp1">
             <button class="accent-btn gp1 flx al-c" @click="requestFileDialog('file')">
@@ -93,31 +93,72 @@ async function requestFileDialog(type: fileOptions): Promise<void> {
   }
 }
 
+// function ImageGallery(): JSX.Element {
+//   const [images, setImages] = useState<ImageFile[]>([]);
+
+//   // 👇 Fetch images from the main process when the component loads
+//   useEffect(() => {
+//     async function fetchImages() {
+//       const allImages = await window.electronAPI.getAllImages();
+//       setImages(allImages);
+//     }
+
+//     fetchImages();
+//   }, []);
+
+//   // 👇 Example of how you might add a new image
+//   const handleAddImage = async (newImage: ImageFile) => {
+//     await window.electronAPI.addImage(newImage);
+//     // Optionally, refresh the list after adding
+//     const allImages = await window.electronAPI.getAllImages();
+//     setImages(allImages);
+//   };
+
+//   return (
+//     <div>
+//       <h2>Image Gallery</h2>
+//       <ul>
+//         {images.map((image) => (
+//           <li key={image.id}>{image.name}</li>
+//         ))}
+//       </ul>
+//     </div>
+//   );
+// }
+
+// export default ImageGallery;
+
+// This function is only triggered on
 async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
-  // using set to prevent duplicate images being uploaded.
+  // prevents uploading duplicates
   const existingPaths = new Set(imageStore.imageList.map((image) => image.inputPath))
   const newPaths = selectedPaths.filter((path) => !existingPaths.has(path))
 
   if (newPaths.length === 0) {
-    // console.log('All selected files are already in the list.')
-    alert('All images are already uploaded! Ensure your images have unique file names.')
+    alert('All images are already uploaded! Ensure your images have unique file names.') // alert probably acceptable here
     return
   }
 
   const newFiles: ImageFile[] = []
 
-  // only processing non duplicate paths
-  newPaths.forEach((path) => {
+  for (const path of newPaths) {
     const fileName = path.split(/[\\/]/).pop() || 'unknown_file'
-    newFiles.push({
+    const newImage = {
       name: fileName,
       inputPath: path,
       verified: false,
-      processed: false // data will be added during model-processing step.
-    })
-  })
-
-  imageStore.addImages(newFiles)
+      processed: false,
+      data: {
+        image_name: fileName,
+        bounding_box: [],
+        keypoints: []
+      }
+    }
+    newFiles.push(newImage)
+    await window.api.addDBImage(newImage) // since I'm storing images to sqlite db before processing, need to make sure I add
+    // calls to appropriate delete endpoint if user clears out their input, whether that's one file or 3k.
+  }
+  imageStore.addImages(newFiles) // adds images to image store (thus updating UI).
   console.log(
     `Added ${newFiles.length} new files. Skipped ${selectedPaths.length - newPaths.length} duplicates.`
   )
@@ -127,11 +168,10 @@ function clearInput(): void {
   successfulFiles.value = []
   failedFileCount.value = 0
   isLoading.value = false
-  imageStore.clearInput()
+  imageStore.clearAllInputImages()
 }
 
-function removeFile(path: string): void {
-  // hmm may rewrite/remove.
+async function removeFile(path: string): Promise<void> {
   imageStore.removeImage(path)
 }
 
@@ -153,10 +193,10 @@ async function startProcessing(): Promise<void> {
     console.log('Response from backend:', res)
     imageStore.bulkUpdateProcessedImages(res.data)
 
-    // set this sto be something which is mort improtant.
     alert(`Processed ${fileCount} images in ${timeTaken.toFixed(2)} seconds.`)
 
-    router.push('Output') // sending to view results of their operation by default, I feel this is intuitive.
+    // after images have been processed, I'm sending the user to output view to verify changes
+    router.push('Output')
   } catch (error) {
     console.error('Error processing images:', error)
     alert('There was an error processing the images. Please check the console for more details.')

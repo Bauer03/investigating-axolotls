@@ -2,23 +2,23 @@ import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { fileOptions } from '../types'
+import { fileOptions, DeletionCriteria, ImageUpdateData } from '../types'
 import fetch from 'node-fetch'
-import Store from 'electron-store'
+import Database from 'better-sqlite3'
 
-const store = new Store()
+export const db = new Database(join(app.getPath('userData'), 'axolotl-measurements.db'))
 
-// Example of storing data
-ipcMain.handle('save-image-data', (event, imageData) => {
-  const images = store.get('images', [])
-  images.push(imageData)
-  store.set('images', images)
-})
-
-// Example of retrieving data
-ipcMain.handle('get-image-data', () => {
-  return store.get('images', [])
-})
+// Create table if it doesn't exist, this runs every time app starts, but only triggers if no db exists.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS images (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    inputPath TEXT UNIQUE,
+    processed BOOLEAN,
+    verified BOOLEAN,
+    keypoints TEXT
+  )
+`)
 
 function createWindow(): void {
   // Create the browser window.
@@ -96,6 +96,95 @@ app.whenReady().then(() => {
       console.error('Error processing images:', error)
       return { error: 'Failed to process images' }
     }
+  })
+
+  // Get all images from the database
+  ipcMain.handle('db:get-all-images', () => {
+    return db
+      .prepare('SELECT * FROM images')
+      .all()
+      .map((img) => ({
+        ...img,
+        processed: Boolean(img.processed), // aaaargh
+        verified: Boolean(img.verified), // january 2035
+        data: { keypoints: JSON.parse(img.keypoints || '[]') }
+      }))
+  })
+
+  // Add image to database
+  ipcMain.handle('db:add-image', (event, image) => {
+    const stmt = db.prepare(
+      'INSERT INTO images (name, inputPath, processed, verified, keypoints) VALUES (?, ?, ?, ?, ?)'
+    )
+    // Keypoints stored as JSON string
+    stmt.run(
+      image.name,
+      image.inputPath,
+      image.processed ? 1 : 0, // Convert boolean to integer, sqlite can't take bool for some reasaon
+      image.verified ? 1 : 0, // same here
+      JSON.stringify(image.data.keypoints)
+    )
+  })
+
+  // Singe image deletion
+  ipcMain.handle('db:delete-image', (event, inputPath: string) => {
+    const stmt = db.prepare('DELETE FROM images WHERE inputPath = ?')
+    const result = stmt.run(inputPath)
+    // result.changes will be 1 if a row was deleted, 0 otherwise.
+    return result.changes > 0
+  })
+
+  // got help from mr gpt here, haven't written proper sql before. turns out it's pretty cool heehe
+  ipcMain.handle('db:delete-images-where', (event, criteria: DeletionCriteria) => {
+    let whereClause = 'WHERE 1 = 1' // Start with a clause that is always true
+    const params: (number | string)[] = []
+
+    if (criteria.processed !== undefined) {
+      whereClause += ' AND processed = ?'
+      params.push(criteria.processed ? 1 : 0)
+    }
+    if (criteria.verified !== undefined) {
+      whereClause += ' AND verified = ?'
+      params.push(criteria.verified ? 1 : 0)
+    }
+
+    // To prevent accidentally deleting everything if no criteria are passed
+    if (params.length === 0) {
+      console.error('Attempted to delete without any criteria. Aborting.')
+      return 0
+    }
+
+    const query = `DELETE FROM images ${whereClause}`
+    const stmt = db.prepare(query)
+    const result = stmt.run(...params)
+
+    return result.changes
+  })
+
+  ipcMain.handle('db:update-image', (event, inputPath: string, data: ImageUpdateData) => {
+    // Convert boolean values to integers before building the query
+    const convertedData: Record<string, unknown> = { ...data }
+    if ('processed' in convertedData && typeof convertedData.processed === 'boolean') {
+      convertedData.processed = convertedData.processed ? 1 : 0
+    }
+    if ('verified' in convertedData && typeof convertedData.verified === 'boolean') {
+      convertedData.verified = convertedData.verified ? 1 : 0
+    }
+
+    const setClauses = Object.keys(convertedData)
+      .map((key) => `${key} = ?`)
+      .join(', ')
+    const params = Object.values(convertedData)
+
+    if (params.length === 0) {
+      return 0 // Nothing to update
+    }
+
+    const query = `UPDATE images SET ${setClauses} WHERE inputPath = ?`
+    const stmt = db.prepare(query)
+    const result = stmt.run(...params, inputPath) // inputPath is the last param for the WHERE clause
+
+    return result.changes
   })
 
   createWindow()

@@ -4,6 +4,11 @@ import { electronAPI } from '@electron-toolkit/preload'
 import { fileOptions, AxolotlAPI, AxoData, ProcessError, ProcessSuccess } from '../types'
 
 const api: AxolotlAPI = {
+  getDBImages: () => ipcRenderer.invoke('db:get-all-images'),
+  addDBImage: (image) => ipcRenderer.invoke('db:add-image', image),
+  deleteImagesWhere: (criteria) => ipcRenderer.invoke('db:delete-images-where', criteria),
+  deleteImage: (inputPath) => ipcRenderer.invoke('db:delete-image', inputPath),
+  updateImage: (inputPath, data) => ipcRenderer.invoke('db:update-image', inputPath, data),
   fileUploadRequest: (type: fileOptions): Promise<string[]> =>
     ipcRenderer.invoke('file-upload-request', type),
 
