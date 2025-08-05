@@ -1,5 +1,5 @@
 <template>
-  <div class="container flx">
+  <div class="container h-full flx jc-c al-c">
     <div
       v-if="!imageStore.imageList || imageStore.imageList.length === 0"
       class="flx col al-c gp2 p1"
@@ -183,7 +183,7 @@ async function startProcessing(): Promise<void> {
 }
 
 .selection-container {
-  max-height: 45vh;
+  max-height: 50vh;
   overflow-y: scroll;
   scrollbar-gutter: stable;
   scrollbar-track-color: none;
