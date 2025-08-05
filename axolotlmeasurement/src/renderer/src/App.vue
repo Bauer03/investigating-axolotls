@@ -13,8 +13,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <Header></Header>
-  <RouterView />
+  <div class="main-card">
+    <Header />
+    <RouterView />
+  </div>
 </template>
 
 <style></style>
