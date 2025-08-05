@@ -23,7 +23,7 @@ export const useImageStore = defineStore('imageStore', () => {
           typeof (error as { message?: string }).message === 'string' &&
           (error as { message?: string }).message?.includes('UNIQUE constraint failed')
         ) {
-          console.log(`Image ${file.inputPath} already exists in database, skipping.`)
+          console.log(`Error: Image ${file.inputPath} already exists in database, skipping.`)
         } else {
           console.error(`Failed to add image ${file.inputPath}:`, error)
         }
@@ -105,7 +105,7 @@ export const useImageStore = defineStore('imageStore', () => {
         // Persist change to the database
         await window.api.updateImage(imageInStore.inputPath, {
           processed: true,
-          keypoints: JSON.stringify(result.keypoints) // Ensure keypoints are stored as a string
+          keypoints: JSON.stringify(result.keypoints) // keypoints are stored as a string
         })
       }
     }

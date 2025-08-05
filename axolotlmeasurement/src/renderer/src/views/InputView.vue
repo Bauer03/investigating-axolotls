@@ -1,7 +1,10 @@
 <template>
   <div class="container h-full flx jc-c al-c">
-    <div v-if="!imageStore.imageList || imageStore.imageList.length === 0" class="flx col al-c gp2">
-      <div class="pd4">
+    <div
+      v-if="!imageStore.imageList || imageStore.imageList.length === 0"
+      class="flx col al-c gp2 p1"
+    >
+      <div class="pd2">
         <h1 class="txt-c">Welcome to MeasuringAxolotls!</h1>
       </div>
       <div class="flx col gp1">
@@ -24,8 +27,8 @@
     </div>
 
     <div v-else class="flx col al-c gp1 w-full">
-      <div class="flx al-c jc-sb glass-container-solid w-full gp4 biggerxpadding">
-        <h3 class="txt-col">Preparing {{ imageStore.imageList.length }} images</h3>
+      <div class="flx al-c jc-sb w-full">
+        <h3 class="txt-col">{{ prepText }}</h3>
         <div class="flx gp1">
           <button class="accent-btn gp1 flx al-c" @click="requestFileDialog('file')">
             <span>Upload image</span>
@@ -38,7 +41,7 @@
         </div>
       </div>
 
-      <div class="glass-selection flx col pd1 w-full selection-container br jc-sb gp05">
+      <div class="flx col pd1 w-full selection-container br jc-sb gp05">
         <TransitionGroup name="list">
           <div
             v-for="image in imageStore.imageList"
@@ -66,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { fileOptions, ProcessSuccess, ProcessError } from '../../../types'
 import { useImageStore } from '../stores/imageStore'
@@ -78,7 +81,11 @@ const router = useRouter()
 const isLoading = ref<boolean>(false)
 const successfulFiles = ref<ImageFile[]>([])
 const failedFileCount = ref<number>(0)
-
+const prepText = computed(() => {
+  return imageStore.imageList.length <= 1
+    ? 'Preparing ' + imageStore.imageList.length + ' image'
+    : 'Preparing ' + imageStore.imageList.length + ' images'
+})
 /**
  * Opens dialog for user to select files/folder
  * @returns Array of user-selected file paths
@@ -93,41 +100,6 @@ async function requestFileDialog(type: fileOptions): Promise<void> {
     console.warn('No files selected or dialog was canceled.')
   }
 }
-
-// function ImageGallery(): JSX.Element {
-//   const [images, setImages] = useState<ImageFile[]>([]);
-
-//   // 👇 Fetch images from the main process when the component loads
-//   useEffect(() => {
-//     async function fetchImages() {
-//       const allImages = await window.electronAPI.getAllImages();
-//       setImages(allImages);
-//     }
-
-//     fetchImages();
-//   }, []);
-
-//   // 👇 Example of how you might add a new image
-//   const handleAddImage = async (newImage: ImageFile) => {
-//     await window.electronAPI.addImage(newImage);
-//     // Optionally, refresh the list after adding
-//     const allImages = await window.electronAPI.getAllImages();
-//     setImages(allImages);
-//   };
-
-//   return (
-//     <div>
-//       <h2>Image Gallery</h2>
-//       <ul>
-//         {images.map((image) => (
-//           <li key={image.id}>{image.name}</li>
-//         ))}
-//       </ul>
-//     </div>
-//   );
-// }
-
-// export default ImageGallery;
 
 // This function is only triggered on
 async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
@@ -156,8 +128,6 @@ async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
       }
     }
     newFiles.push(newImage)
-    await window.api.addDBImage(newImage) // since I'm storing images to sqlite db before processing, need to make sure I add
-    // calls to appropriate delete endpoint if user clears out their input, whether that's one file or 3k.
   }
   imageStore.addImages(newFiles) // adds images to image store (thus updating UI).
   console.log(
@@ -196,8 +166,8 @@ async function startProcessing(): Promise<void> {
 
     alert(`Processed ${fileCount} images in ${timeTaken.toFixed(2)} seconds.`)
 
-    // after images have been processed, I'm sending the user to output view to verify changes
-    router.push('Output')
+    // after images have been processed, I'm sending the user to validate view to verify changes
+    router.push('Validate')
   } catch (error) {
     console.error('Error processing images:', error)
     alert('There was an error processing the images. Please check the console for more details.')
@@ -213,24 +183,25 @@ async function startProcessing(): Promise<void> {
 }
 
 .selection-container {
-  /* max-height: 50vh; */
+  max-height: 50vh;
   overflow-y: scroll;
   scrollbar-gutter: stable;
   scrollbar-track-color: none;
   color: var(--txt-col);
+  background-color: var(--bg-col-alt);
   div {
     background-color: var(--bg-col);
+    user-select: none;
   }
 }
 
 .list-image {
-  padding: var(--sp05) var(--sp2);
+  padding: var(--sp05) var(--sp1) var(--sp05) var(--sp2);
 }
 
 .closebtn {
   color: var(--txt-col);
   background-color: inherit;
-  padding-right: 0;
 }
 
 .biggerxpadding {

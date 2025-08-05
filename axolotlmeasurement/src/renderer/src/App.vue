@@ -14,13 +14,7 @@ onMounted(async () => {
 
 <template>
   <Header></Header>
-  <main class="main-content flx jc-c">
-    <RouterView />
-  </main>
+  <RouterView />
 </template>
 
-<style>
-.main-content {
-  flex: 1;
-}
-</style>
+<style></style>

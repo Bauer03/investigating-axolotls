@@ -58,7 +58,6 @@ nav {
 
   /* Hover effect for links */
   a:hover {
-    transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     &:not(.router-link-exact-active) {
       background: rgba(255, 255, 255, 0.1);
@@ -94,7 +93,6 @@ nav {
 
 .router-link-exact-active:hover {
   background: linear-gradient(135deg, rgba(228, 113, 36, 1) 0%, rgba(228, 113, 36, 0.8) 100%);
-  transform: translateY(-2px);
   box-shadow:
     0 6px 20px rgba(228, 113, 36, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
