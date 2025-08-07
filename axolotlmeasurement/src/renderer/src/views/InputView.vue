@@ -1,34 +1,13 @@
 <template>
-  <div class="container h-full flx jc-c al-c">
-    <div
-      v-if="!imageStore.imageList || imageStore.imageList.length === 0"
-      class="flx col al-c gp2 p1"
-    >
-      <div class="pd2">
-        <h1 class="txt-c">Welcome to MeasuringAxolotls!</h1>
-      </div>
-      <div class="flx col gp1">
-        <span class="txt-c">Upload images to get started.</span>
-        <div class="draganddrop glass-panel flx col al-c gp1 pd2">
-          <span>Drag and drop images/folders here (TODO)</span>
-          <span>or</span>
-          <div class="flx gp1">
-            <button class="accent-btn gp1 flx al-c" @click="requestFileDialog('file')">
-              <span>Upload image</span>
-              <span class="material-icons-outlined icon">add_photo_alternate</span>
-            </button>
-            <button class="accent-btn gp1 flx al-c" @click="requestFileDialog('folder')">
-              <span>Upload folder</span>
-              <span class="material-icons-outlined icon">folder</span>
-            </button>
-          </div>
-        </div>
-      </div>
+  <div v-if="!imageStore.imageList || imagesToProcess.length <= 0" class="flx col al-c gp2 pd2">
+    <div class="pd2">
+      <h1 class="txt-c">Welcome to MeasuringAxolotls!</h1>
     </div>
-
-    <div v-else class="flx col al-c gp1 w-full">
-      <div class="flx al-c jc-sb w-full">
-        <h3 class="txt-col">{{ prepText }}</h3>
+    <div class="flx col gp1">
+      <span class="txt-c">Upload images to get started.</span>
+      <div class="draganddrop glass-panel flx col al-c gp1 pd2">
+        <span>Drag and drop images/folders here (TODO)</span>
+        <span>or</span>
         <div class="flx gp1">
           <button class="accent-btn gp1 flx al-c" @click="requestFileDialog('file')">
             <span>Upload image</span>
@@ -40,30 +19,47 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
 
-      <div class="flx col pd1 w-full selection-container br jc-sb gp05">
-        <TransitionGroup name="list">
-          <div
-            v-for="image in imageStore.imageList"
-            :key="image.inputPath"
-            class="glass-list-item flx w-full al-c jc-sb list-image"
-          >
-            <span>{{ image.name }}</span>
-            <button class="closebtn" @click="removeFile(image.inputPath)">
-              <span class="material-icons-outlined icon">close</span>
-            </button>
-          </div>
-        </TransitionGroup>
-      </div>
-
-      <div class="flx gp1 w-full jc-end">
-        <button class="discreet-btn flx gp1 al-c" @click="clearInput">
-          <span>Reset input</span><span class="material-icons-outlined icon">delete</span>
+  <div v-else class="flx col al-c gp1 w-full pd1 pt2">
+    <div class="flx al-c jc-sb w-full">
+      <h3 class="txt-col">{{ prepText }}</h3>
+      <div class="flx gp1">
+        <button class="accent-btn gp1 flx al-c" @click="requestFileDialog('file')">
+          <span>Upload image</span>
+          <span class="material-icons-outlined icon">add_photo_alternate</span>
         </button>
-        <button class="accent-btn flx gp1 al-c" @click="startProcessing">
-          <span>Start</span><span class="material-icons-outlined icon">chevron_right</span>
+        <button class="accent-btn gp1 flx al-c" @click="requestFileDialog('folder')">
+          <span>Upload folder</span>
+          <span class="material-icons-outlined icon">folder</span>
         </button>
       </div>
+    </div>
+
+    <div class="flx col pd1 w-full selection-container br jc-sb gp05">
+      <!-- check w/ calvin about making gap between list items smaller -->
+      <TransitionGroup name="list">
+        <div
+          v-for="image in imagesToProcess"
+          :key="image.inputPath"
+          class="glass-list-item flx w-full al-c jc-sb list-image"
+        >
+          <span>{{ image.name }}</span>
+          <button class="closebtn" @click="removeFile(image.inputPath)">
+            <span class="material-icons-outlined icon">close</span>
+          </button>
+        </div>
+      </TransitionGroup>
+    </div>
+
+    <div class="flx gp1 w-full jc-end">
+      <button class="discreet-btn flx gp1 al-c" @click="clearInput">
+        <span>Reset input</span><span class="material-icons-outlined icon">delete</span>
+      </button>
+      <button class="accent-btn flx gp1 al-c" @click="startProcessing">
+        <span>Start</span><span class="material-icons-outlined icon">chevron_right</span>
+      </button>
     </div>
   </div>
 </template>
@@ -82,10 +78,18 @@ const isLoading = ref<boolean>(false)
 const successfulFiles = ref<ImageFile[]>([])
 const failedFileCount = ref<number>(0)
 const prepText = computed(() => {
-  return imageStore.imageList.length <= 1
-    ? 'Preparing ' + imageStore.imageList.length + ' image'
-    : 'Preparing ' + imageStore.imageList.length + ' images'
+  return imagesToProcess.value.length <= 1
+    ? 'Preparing ' + imagesToProcess.value.length + ' image'
+    : 'Preparing ' + imagesToProcess.value.length + ' images'
 })
+import type { ComputedRef } from 'vue'
+
+const imagesToProcess: ComputedRef<ImageFile[]> = computed(() => {
+  return imageStore.imageList.filter((img) => {
+    return !img.processed
+  })
+})
+
 /**
  * Opens dialog for user to select files/folder
  * @returns Array of user-selected file paths
@@ -104,7 +108,7 @@ async function requestFileDialog(type: fileOptions): Promise<void> {
 // This function is only triggered on
 async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
   // prevents uploading duplicates
-  const existingPaths = new Set(imageStore.imageList.map((image) => image.inputPath))
+  const existingPaths = new Set(imagesToProcess.value.map((image) => image.inputPath))
   const newPaths = selectedPaths.filter((path) => !existingPaths.has(path))
 
   if (newPaths.length === 0) {
@@ -139,14 +143,12 @@ function clearInput(): void {
   successfulFiles.value = []
   failedFileCount.value = 0
   isLoading.value = false
-  imageStore.clearAllInputImages()
+  imageStore.clearAllInputImages() // selectedToProcess is reset by imageStore function
 }
 
 async function removeFile(path: string): Promise<void> {
   imageStore.removeImage(path)
 }
-
-// in InputView.vue
 
 async function startProcessing(): Promise<void> {
   isLoading.value = true

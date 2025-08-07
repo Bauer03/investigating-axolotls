@@ -1,37 +1,46 @@
 <template>
-  <div class="content flx gp2 pd2">
+  <div v-if="imagesToValidate.length <= 0" class="pd4">
+    <span> You currently have no images to validate. Head to the 'input' tab to get started! </span>
+  </div>
+
+  <div v-else class="content flx gp2 pd1 pt2">
     <div class="validate-left glass-sidebar flx col gp1 pd2">
       <h3 class="txt-col">Images to Validate</h3>
       <div class="flx col gp05">
         <div
-          v-for="image in processedImages"
+          v-for="image in imagesToValidate"
           :key="image.inputPath"
           class="glass-list-item pd1"
-          :class="{ selected: imageStore.selectedImage?.inputPath === image.inputPath }"
+          :class="{ selected: imageStore.selectedToValidate?.inputPath === image.inputPath }"
           @click="imageStore.selectImage(image.inputPath)"
         >
-          <span>{{ image.data?.image_name }}</span>
+          <span>{{ image.name }}</span>
         </div>
       </div>
     </div>
 
-    <div class="validate-right flx col gp2 flex-1">
+    <div class="validate-right flx col gp1">
       <div class="glass-preview">
         <img
-          :src="imageStore.selectedImage?.inputPath || ''"
+          :src="imageStore.selectedToValidate?.inputPath || ''"
           alt="Preview of model's keypoint distribution"
-          class="validate-preview w-full"
-          style="display: block; max-height: 60vh; object-fit: contain"
+          class="validate-image w-full"
         />
       </div>
 
-      <div class="glass-panel pd2">
+      <div class="glass-panel pd1">
         <div class="validation-controls flx gp1 jc-c">
-          <button class="discreet-btn flx gp05 al-c">
+          <button
+            class="discreet-btn flx gp05 al-c"
+            @click="editKeypoints(imageStore.selectedToValidate?.inputPath)"
+          >
             <span class="material-icons-outlined">edit</span>
             Edit Keypoints
           </button>
-          <button class="accent-btn flx gp05 al-c">
+          <button
+            class="accent-btn flx gp05 al-c"
+            @click="confirmImage(imageStore.selectedToValidate?.inputPath)"
+          >
             <span class="material-icons-outlined">check</span>
             Validate Image
           </button>
@@ -43,14 +52,44 @@
 <script setup lang="ts">
 import { useImageStore } from '../stores/imageStore'
 import { ImageFile } from 'src/types'
-import { computed } from 'vue'
+import { computed, ComputedRef } from 'vue'
 
 const imageStore = useImageStore()
 
-// TODO: add global indicator that there are images to validate. that way, i can easily separate validate view from output view.
-const processedImages = computed(() => {
+// 'to validate' images have been passed through model, but have yet to be verified by user.
+// 'img.verified' is set to true when user confirms or corrects model keypoints. since computed, will update automatically.
+const imagesToValidate: ComputedRef<ImageFile[]> = computed(() => {
   return imageStore.imageList.filter((img: ImageFile) => {
     return img.processed && !img.verified
   })
 })
+
+function editKeypoints(inputPath?: string): void {
+  // find image in imagestore.
+  // req fullscreen, with painted keypoints onto image.
+  // display keypoints-annotated image, where keypoints can be changed
+  // add 'confirm keypoints' button
+  // onclick of button, save new keypoints, toggle fullscreen.
+  console.log('editing keypoints for: ' + inputPath)
+}
+
+function confirmImage(inputPath?: string): void {
+  // get image from image store.
+  // call imageStore.updateImageVerification(). Pass in inputPath, and then associated model-returned keypoints.
+  console.log('Sending to gallery: ' + inputPath)
+}
 </script>
+<style scoped>
+.validate-image {
+  object-fit: contain;
+  aspect-ratio: 16/9;
+  max-width: 50vw;
+}
+
+.content {
+  width: 100%;
+  display: flex;
+  gap: var(--gp1);
+  justify-content: space-between;
+}
+</style>

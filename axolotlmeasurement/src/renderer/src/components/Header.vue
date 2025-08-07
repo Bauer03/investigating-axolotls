@@ -2,13 +2,21 @@
   <nav class="flx">
     <div class="nav flx">
       <router-link to="/">Input</router-link>
-      <router-link to="/validate">Validate</router-link>
+      <router-link to="/validate" @click="picknewimg">Validate</router-link>
       <router-link to="/gallery">Gallery</router-link>
     </div>
   </nav>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { useImageStore } from '@renderer/stores/imageStore'
+
+const imageStore = useImageStore()
+
+function picknewimg(): void {
+  imageStore.selectImage(imageStore.validationList[0].inputPath)
+}
+</script>
 
 <style scoped>
 /* Enhanced Header.vue styles */

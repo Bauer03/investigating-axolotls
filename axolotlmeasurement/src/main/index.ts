@@ -98,7 +98,7 @@ app.whenReady().then(() => {
     }
   })
 
-  // Get all images from the database
+  // Get all images from the database. Still have to think about best times to call this, to avoid data tweaks as much as possible.
   ipcMain.handle('db:get-all-images', () => {
     return db
       .prepare('SELECT * FROM images')

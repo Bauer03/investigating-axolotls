@@ -1,12 +1,11 @@
-// src/renderer/src/stores/imageStore.ts
-
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { ImageFile, AxoData } from 'src/types'
 
 export const useImageStore = defineStore('imageStore', () => {
   const imageList = ref<ImageFile[]>([])
-  const selectedImagePath = ref<string | null>(null)
+  const selectedToValidatePath = ref<string | null>(null)
+  const selectedGalleryImagePath = ref<string | null>(null) // variable name length would probably give Caleb a heart attack
 
   async function addImages(files: ImageFile[]): Promise<void> {
     const successfullyAdded: ImageFile[] = []
@@ -21,7 +20,7 @@ export const useImageStore = defineStore('imageStore', () => {
           error !== null &&
           'message' in error &&
           typeof (error as { message?: string }).message === 'string' &&
-          (error as { message?: string }).message?.includes('UNIQUE constraint failed')
+          (error as { message?: string }).message?.includes('UNIQUE constraint failed') // not sure that this error is always bc of this but..
         ) {
           console.log(`Error: Image ${file.inputPath} already exists in database, skipping.`)
         } else {
@@ -38,21 +37,27 @@ export const useImageStore = defineStore('imageStore', () => {
     }
   }
 
-  const selectedImage = computed(() => {
-    if (!selectedImagePath.value) {
-      // no path selected means no selected image
+  const selectedToValidate = computed(() => {
+    if (!selectedToValidatePath.value) {
       return null
     }
     // find image in imagelist using path
-    return imageList.value.find((image) => image.inputPath === selectedImagePath.value) || null
+    return imageList.value.find((image) => image.inputPath === selectedToValidatePath.value) || null
+  })
+
+  const selectedGalleryImage = computed(() => {
+    if (!selectedGalleryImagePath.value) {
+      return null
+    }
+    return imageList.value.find((img) => img.inputPath === selectedGalleryImagePath.value) || null
   })
 
   function selectImage(path: string): void {
-    selectedImagePath.value = path
+    selectedToValidatePath.value = path
   }
 
   function unselectImage(): void {
-    selectedImagePath.value = null
+    selectedToValidatePath.value = null
   }
 
   // delete single image. Just needs path to work right.
@@ -79,6 +84,19 @@ export const useImageStore = defineStore('imageStore', () => {
   async function clearValidationList(): Promise<void> {
     await window.api.deleteImagesWhere({ processed: true, verified: false })
     imageList.value = imageList.value.filter((image) => !image.processed || image.verified)
+  }
+
+  const validationList = computed(() => {
+    return imageList.value.filter((img) => {
+      return img.processed && !img.verified
+    })
+  })
+
+  async function getValidationList(): Promise<ImageFile[]> {
+    // no need for db calls, this just reads from store
+    return imageList.value.filter((image) => {
+      return image.processed && !image.verified
+    })
   }
 
   /**
@@ -132,6 +150,20 @@ export const useImageStore = defineStore('imageStore', () => {
     }
   }
 
+  // Pinia setup store: use onStoreInit
+  // @ts-ignore: onStoreInit may not be typed in some environments
+  if (typeof window !== 'undefined' && typeof __VUE_DEVTOOLS_GLOBAL_HOOK__ === 'undefined') {
+    // @ts-ignore: onStoreInit may not be typed in some environments
+    if (typeof onStoreInit === 'function') {
+      // @ts-ignore: onStoreInit may not be typed in some environments
+      onStoreInit(() => {
+        loadExistingImages()
+      })
+    } else {
+      // fallback: call manually in your app's entry point
+      loadExistingImages()
+    }
+  }
   async function loadExistingImages(): Promise<void> {
     try {
       const existingImages = await window.api.getDBImages()
@@ -152,7 +184,10 @@ export const useImageStore = defineStore('imageStore', () => {
     clearValidationList,
     clearGallery,
     selectImage,
-    selectedImage,
-    unselectImage
+    selectedToValidate,
+    unselectImage,
+    selectedGalleryImage,
+    getValidationList,
+    validationList
   }
 })
