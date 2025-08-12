@@ -3,19 +3,22 @@
     <span> You currently have no images to validate. Head to the 'input' tab to get started! </span>
   </div>
 
-  <div v-else class="content flx gp2 pd1 pt2">
+  <div v-else class="content flx gp1 pd1 pt2">
     <div class="validate-left glass-sidebar flx col gp1 pd2">
       <h3 class="txt-col">Images to Validate</h3>
       <div class="flx col gp05">
-        <div
-          v-for="image in imagesToValidate"
-          :key="image.inputPath"
-          class="glass-list-item pd1"
-          :class="{ selected: imageStore.selectedToValidate?.inputPath === image.inputPath }"
-          @click="imageStore.selectImage(image.inputPath)"
-        >
-          <span>{{ image.name }}</span>
-        </div>
+        <!-- haven't implemented this yet, but will allow transitions -->
+        <transition-group>
+          <div
+            v-for="image in imagesToValidate"
+            :key="image.inputPath"
+            class="glass-list-item"
+            :class="{ selected: imageStore.selectedToValidate?.inputPath === image.inputPath }"
+            @click="imageStore.selectImage(image.inputPath, 'verify')"
+          >
+            <span>{{ image.name }}</span>
+          </div>
+        </transition-group>
       </div>
     </div>
 
@@ -52,9 +55,10 @@
 <script setup lang="ts">
 import { useImageStore } from '../stores/imageStore'
 import { ImageFile } from 'src/types'
-import { computed, ComputedRef } from 'vue'
+import { computed, ComputedRef, ref } from 'vue'
 
 const imageStore = useImageStore()
+let curKeypoints = ref<string>('')
 
 // 'to validate' images have been passed through model, but have yet to be verified by user.
 // 'img.verified' is set to true when user confirms or corrects model keypoints. since computed, will update automatically.
@@ -75,6 +79,13 @@ function editKeypoints(inputPath?: string): void {
 
 function confirmImage(inputPath?: string): void {
   // get image from image store.
+  const confimg = imageStore.imageList.find((img: ImageFile) => img.inputPath === inputPath)
+  if (confimg && curKeypoints) {
+    imageStore.updateImageVerification(confimg.inputPath, {
+      verified: true,
+      keypoints: JSON.stringify(curKeypoints.value)
+    })
+  }
   // call imageStore.updateImageVerification(). Pass in inputPath, and then associated model-returned keypoints.
   console.log('Sending to gallery: ' + inputPath)
 }

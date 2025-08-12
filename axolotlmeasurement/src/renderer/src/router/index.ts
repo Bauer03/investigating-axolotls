@@ -8,9 +8,9 @@ const routes = [
     component: InputView
   },
   {
-    path: '/validate',
-    name: 'Validate',
-    component: () => import('../views/ValidateView.vue')
+    path: '/verify',
+    name: 'Verify',
+    component: () => import('../views/VerificationView.vue')
   },
   {
     path: '/gallery',

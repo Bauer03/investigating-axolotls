@@ -2,8 +2,8 @@
   <nav class="flx">
     <div class="nav flx">
       <router-link to="/">Input</router-link>
-      <router-link to="/validate" @click="picknewimg">Validate</router-link>
-      <router-link to="/gallery">Gallery</router-link>
+      <router-link to="/verify" @click="selectValidationImage()">Validate</router-link>
+      <router-link to="/gallery" @click="selectGalleryImage()">Gallery</router-link>
     </div>
   </nav>
 </template>
@@ -13,13 +13,15 @@ import { useImageStore } from '@renderer/stores/imageStore'
 
 const imageStore = useImageStore()
 
-function picknewimg(): void {
-  imageStore.selectImage(imageStore.validationList[0].inputPath)
+function selectValidationImage(): void {
+  imageStore.selectImage(imageStore.validationList[0].inputPath, 'verify')
+}
+function selectGalleryImage(): void {
+  imageStore.selectImage(imageStore.galleryList[0].inputPath, 'gallery')
 }
 </script>
 
 <style scoped>
-/* Enhanced Header.vue styles */
 nav {
   justify-content: flex-end;
   padding: var(--sp1) var(--sp2);
@@ -72,7 +74,7 @@ nav {
     }
   }
 
-  /* Add a subtle shine effect */
+  /* shine effect */
   a::before {
     content: '';
     position: absolute;
@@ -89,7 +91,11 @@ nav {
   }
 }
 
-/* Enhanced active link styling */
+/* active link styling */
+.router-link {
+  border: 1px transparent rgba(0, 0, 0, 0);
+}
+
 .router-link-exact-active {
   background: linear-gradient(135deg, rgba(228, 113, 36, 0.9) 0%, rgba(228, 113, 36, 0.7) 100%);
   color: var(--bg-col-alt);
@@ -104,13 +110,5 @@ nav {
   box-shadow:
     0 6px 20px rgba(228, 113, 36, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-
-/* Optional: Add a subtle glow to the entire nav on hover */
-.nav:hover {
-  box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.2);
 }
 </style>

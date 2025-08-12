@@ -40,11 +40,7 @@
     <div class="flx col pd1 w-full selection-container br jc-sb gp05">
       <!-- check w/ calvin about making gap between list items smaller -->
       <TransitionGroup name="list">
-        <div
-          v-for="image in imagesToProcess"
-          :key="image.inputPath"
-          class="glass-list-item flx w-full al-c jc-sb list-image"
-        >
+        <div v-for="image in imagesToProcess" :key="image.inputPath" class="glass-list-item">
           <span>{{ image.name }}</span>
           <button class="closebtn" @click="removeFile(image.inputPath)">
             <span class="material-icons-outlined icon">close</span>
@@ -169,7 +165,7 @@ async function startProcessing(): Promise<void> {
     alert(`Processed ${fileCount} images in ${timeTaken.toFixed(2)} seconds.`)
 
     // after images have been processed, I'm sending the user to validate view to verify changes
-    router.push('Validate')
+    router.push('Verify')
   } catch (error) {
     console.error('Error processing images:', error)
     alert('There was an error processing the images. Please check the console for more details.')
@@ -190,15 +186,7 @@ async function startProcessing(): Promise<void> {
   scrollbar-gutter: stable;
   scrollbar-track-color: none;
   color: var(--txt-col);
-  background-color: var(--bg-col-alt);
-  div {
-    background-color: var(--bg-col);
-    user-select: none;
-  }
-}
-
-.list-image {
-  padding: var(--sp05) var(--sp1) var(--sp05) var(--sp2);
+  /* background-color: var(--bg-col-alt); */
 }
 
 .closebtn {

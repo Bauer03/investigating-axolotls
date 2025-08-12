@@ -52,15 +52,22 @@ export const useImageStore = defineStore('imageStore', () => {
     return imageList.value.find((img) => img.inputPath === selectedGalleryImagePath.value) || null
   })
 
-  function selectImage(path: string): void {
-    selectedToValidatePath.value = path
+  function selectImage(path: string, destination: 'verify' | 'gallery'): void {
+    if (destination === 'verify') {
+      selectedToValidatePath.value = path
+    } else if (destination === 'gallery') {
+      selectedGalleryImagePath.value = path
+    }
   }
 
   function unselectImage(): void {
     selectedToValidatePath.value = null
+    selectedGalleryImagePath.value = null
   }
 
-  // delete single image. Just needs path to work right.
+  /**
+   * delete single image from store & db
+   * */
   async function removeImage(pathToRemove: string): Promise<void> {
     const success = await window.api.deleteImage(pathToRemove)
     if (success) {
@@ -123,14 +130,14 @@ export const useImageStore = defineStore('imageStore', () => {
         // Persist change to the database
         await window.api.updateImage(imageInStore.inputPath, {
           processed: true,
-          keypoints: JSON.stringify(result.keypoints) // keypoints are stored as a string
+          keypoints: JSON.stringify(result.keypoints)
         })
       }
     }
   }
 
   // Also needed for verifying/correcting points
-  async function updateImageVerification(
+  async function updateImageVerification( // Going to leave updateddata as param to maybe revert verification state later?
     inputPath: string,
     updatedData: { verified: boolean; keypoints: string }
   ): Promise<void> {
@@ -139,6 +146,7 @@ export const useImageStore = defineStore('imageStore', () => {
       imageInStore.verified = updatedData.verified
       if (!imageInStore.data) {
         imageInStore.data = {
+          // not sure what's wrong with the data here. but when I try and set stuff up for ever.
           image_name: imageInStore.name,
           bounding_box: [],
           keypoints: JSON.parse(updatedData.keypoints)
@@ -146,7 +154,11 @@ export const useImageStore = defineStore('imageStore', () => {
       } else {
         imageInStore.data.keypoints = JSON.parse(updatedData.keypoints)
       }
-      await window.api.updateImage(inputPath, updatedData)
+      await window.api.updateImage(inputPath, {
+        processed: imageInStore.processed,
+        verified: imageInStore.verified,
+        keypoints: JSON.stringify(imageInStore.data.keypoints)
+      })
     }
   }
 
@@ -173,6 +185,12 @@ export const useImageStore = defineStore('imageStore', () => {
     }
   }
 
+  const galleryList = computed(() => {
+    return imageList.value.filter((img) => {
+      return img.processed && img.verified
+    })
+  })
+
   return {
     loadExistingImages,
     imageList,
@@ -188,6 +206,7 @@ export const useImageStore = defineStore('imageStore', () => {
     unselectImage,
     selectedGalleryImage,
     getValidationList,
+    galleryList,
     validationList
   }
 })

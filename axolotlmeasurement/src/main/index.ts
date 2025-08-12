@@ -9,6 +9,7 @@ import Database from 'better-sqlite3'
 export const db = new Database(join(app.getPath('userData'), 'axolotl-measurements.db'))
 
 // Create table if it doesn't exist, this runs every time app starts, but only triggers if no db exists.
+// Note: Parsing arrays/lists into strings to store in here.
 db.exec(`
   CREATE TABLE IF NOT EXISTS images (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

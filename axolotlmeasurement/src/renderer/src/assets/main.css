@@ -49,6 +49,13 @@
   gap: var(--sp4);
 }
 
+.no-select {
+  user-select: none;
+}
+
+.pointer {
+  cursor: pointer;
+}
 
 .h-full {
   height: 100%;
@@ -182,7 +189,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-/* Drag and Drop Glass Effect */
+/* /* also glass effect */
 .draganddrop {
   border: 2px dashed rgba(249, 242, 255, 0.4);
   background: linear-gradient(135deg,
@@ -246,11 +253,15 @@
     rgba(52, 37, 59, 0.7) 0%,
     rgba(52, 37, 59, 0.5) 100%
   );
+  padding: var(--sp1);
+  user-select: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
   backdrop-filter: blur(8px);
   border: 1px solid rgba(249, 242, 255, 0.1);
   border-radius: calc(var(--br) * 0.5);
   transition: all 0.3s ease;
-  margin-bottom: 0.5rem;
 }
 
 .glass-list-item:hover {
@@ -304,7 +315,7 @@
   box-shadow: 0 4px 12px rgba(228, 113, 36, 0.3);
 }
 
-/* default breakpoints for media queries. keeping in case they're relevant, idrk mobile dev */
+/* default electron breakpoints for media queries. keeping in case they're relevant, idrk mobile dev */
 @media (max-width: 720px) {
 
 }
