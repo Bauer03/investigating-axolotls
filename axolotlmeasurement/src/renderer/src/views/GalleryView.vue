@@ -6,8 +6,8 @@
   </div>
 
   <div v-else class="content flx gp1 pd1 pt2">
-    <div class="gallery-left glass-sidebar flx col gp1 pd2">
-      <h3 class="txt-col">Verified Images</h3>
+    <div class="gallery-left flx col gp1">
+      <h3 class="txt-col">Your Images</h3>
       <div class="flx col gp05">
         <div
           v-for="image in galleryImages"
@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <div class="gallery-right flx col gp2">
+    <div class="gallery-right flx col gp1">
       <div class="glass-preview">
         <img
           :src="selectedImage?.inputPath || ''"
@@ -30,7 +30,7 @@
         />
       </div>
 
-      <div class="glass-panel pd2 flx gp1">
+      <div class="glass-panel pd1 flx gp1 jc-end">
         <button class="discreet-btn flx gp05 al-c">
           <span class="material-icons-outlined">download</span>
           Export Data
@@ -64,6 +64,10 @@ onMounted(() => {
   object-fit: contain;
   aspect-ratio: 16/9;
   max-width: 50vw;
+}
+
+.gallery-left {
+  width: max-content;
 }
 
 .content {

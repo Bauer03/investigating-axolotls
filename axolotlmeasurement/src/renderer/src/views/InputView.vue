@@ -1,6 +1,6 @@
 <template>
   <div v-if="!imageStore.imageList || imagesToProcess.length <= 0" class="flx col al-c gp2 pd2">
-    <div class="pd2">
+    <div>
       <h1 class="txt-c">Welcome to MeasuringAxolotls!</h1>
     </div>
     <div class="flx col gp1">

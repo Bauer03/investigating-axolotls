@@ -2,7 +2,7 @@
   <nav class="flx">
     <div class="nav flx">
       <router-link to="/">Input</router-link>
-      <router-link to="/verify" @click="selectValidationImage()">Validate</router-link>
+      <router-link to="/validate" @click="selectValidationImage()">Validate</router-link>
       <router-link to="/gallery" @click="selectGalleryImage()">Gallery</router-link>
     </div>
   </nav>
@@ -14,10 +14,16 @@ import { useImageStore } from '@renderer/stores/imageStore'
 const imageStore = useImageStore()
 
 function selectValidationImage(): void {
-  imageStore.selectImage(imageStore.validationList[0].inputPath, 'verify')
+  // if check ensures that if you select an image and switch tabs, it'll be selected when you return.
+  // could help user if thousands of images in gallery/validate and didn't realize switching could lose selection.
+  if (!imageStore.selectedToValidate) {
+    imageStore.selectImage(imageStore.validationList[0].inputPath, 'verify')
+  }
 }
 function selectGalleryImage(): void {
-  imageStore.selectImage(imageStore.galleryList[0].inputPath, 'gallery')
+  if (!imageStore.selectedGalleryImage) {
+    imageStore.selectImage(imageStore.galleryList[0].inputPath, 'gallery')
+  }
 }
 </script>
 

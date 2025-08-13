@@ -4,7 +4,7 @@
   </div>
 
   <div v-else class="content flx gp1 pd1 pt2">
-    <div class="validate-left glass-sidebar flx col gp1 pd2">
+    <div class="validate-left flx col gp1">
       <h3 class="txt-col">Images to Validate</h3>
       <div class="flx col gp05">
         <!-- haven't implemented this yet, but will allow transitions -->
@@ -32,7 +32,7 @@
       </div>
 
       <div class="glass-panel pd1">
-        <div class="validation-controls flx gp1 jc-c">
+        <div class="validation-controls flx gp1 jc-end">
           <button
             class="discreet-btn flx gp05 al-c"
             @click="editKeypoints(imageStore.selectedToValidate?.inputPath)"
@@ -95,6 +95,10 @@ function confirmImage(inputPath?: string): void {
   object-fit: contain;
   aspect-ratio: 16/9;
   max-width: 50vw;
+}
+
+.validate-left {
+  width: max-content;
 }
 
 .content {
