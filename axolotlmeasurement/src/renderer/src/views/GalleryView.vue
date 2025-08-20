@@ -22,11 +22,12 @@
     </div>
 
     <div class="gallery-right flx col gp1">
-      <div class="glass-preview">
+      <div class="glass-preview flx">
         <img
           :src="selectedImage?.inputPath || ''"
-          alt="Preview of model's keypoint distribution"
           class="gallery-image w-full"
+          alt="Preview of model's keypoint distribution"
+          @click="selectedImage && openFullscreen(selectedImage)"
         />
       </div>
 
@@ -42,15 +43,51 @@
       </div>
     </div>
   </div>
+
+  <div v-if="fullscreenImage" class="fullscreen-modal" @click.self="closeFullscreen">
+    <div class="fullscreen-content">
+      <img :src="fullscreenImage.inputPath" alt="Fullscreen Image" class="fullscreen-image" />
+      <div class="fullscreen-buttons flx gp1 jc-end">
+        <button class="discreet-btn" @click="closeFullscreen">Cancel</button>
+        <button class="accent-btn" @click="saveAndCloseFullscreen">Save and Close</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { useImageStore } from '../stores/imageStore'
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, Ref } from 'vue'
+import { ImageFile, Keypoint } from 'src/types'
 
 const imageStore = useImageStore()
 const galleryImages = computed(() => imageStore.galleryList)
 const selectedImage = computed(() => imageStore.selectedGalleryImage)
+
+const fullscreenImage = ref<ImageFile | null>(null)
+const editedKeypoints: Ref<Keypoint[]> = ref([])
+
+function openFullscreen(image: ImageFile): void {
+  fullscreenImage.value = image
+  // Parse keypoints if they're stored as string, otherwise use as is
+  const keypoints =
+    typeof image.keypoints === 'string' ? JSON.parse(image.keypoints) : image.keypoints || []
+  editedKeypoints.value = JSON.parse(JSON.stringify(keypoints))
+}
+
+function closeFullscreen(): void {
+  fullscreenImage.value = null
+  editedKeypoints.value = []
+}
+
+async function saveAndCloseFullscreen(): Promise<void> {
+  if (fullscreenImage.value) {
+    await imageStore.updateImage(fullscreenImage.value.inputPath, {
+      keypoints: editedKeypoints.value
+    })
+  }
+  closeFullscreen()
+}
 
 onMounted(() => {
   if (galleryImages.value.length > 0 && !selectedImage.value) {
@@ -61,9 +98,10 @@ onMounted(() => {
 
 <style scoped>
 .gallery-image {
-  object-fit: contain;
-  aspect-ratio: 16/9;
+  object-fit: cover;
+  height: 250px;
   max-width: 50vw;
+  cursor: pointer;
 }
 
 .gallery-left {
@@ -75,5 +113,37 @@ onMounted(() => {
   display: flex;
   gap: var(--gp1);
   justify-content: space-between;
+}
+
+.fullscreen-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.fullscreen-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp1);
+}
+
+.fullscreen-image {
+  width: 80vw;
+  height: auto;
+  border-radius: var(--br);
+  object-fit: contain;
+}
+
+.fullscreen-buttons {
+  padding: var(--sp1);
+  background-color: var(--bg-col);
+  border-radius: var(--br);
 }
 </style>

@@ -16,12 +16,13 @@ const imageStore = useImageStore()
 function selectValidationImage(): void {
   // if check ensures that if you select an image and switch tabs, it'll be selected when you return.
   // could help user if thousands of images in gallery/validate and didn't realize switching could lose selection.
-  if (!imageStore.selectedToValidate) {
-    imageStore.selectImage(imageStore.validationList[0].inputPath, 'verify')
+  if (!imageStore.selectedValidationImage && imageStore.validationList.length > 0) {
+    imageStore.selectImage(imageStore.validationList[0].inputPath, 'validation')
   }
 }
+
 function selectGalleryImage(): void {
-  if (!imageStore.selectedGalleryImage) {
+  if (!imageStore.selectedGalleryImage && imageStore.galleryList.length > 0) {
     imageStore.selectImage(imageStore.galleryList[0].inputPath, 'gallery')
   }
 }

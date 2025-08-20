@@ -5,7 +5,7 @@ export type fileOptions = 'file' | 'folder'
 export type AxoData = {
   image_name: string
   bounding_box: number[][]
-  keypoints: number[][]
+  keypoints: Keypoint[]
 }
 
 // passed to deletion functions, used to determine WHAT images to delete. for single deletions, unnecessary. only need path.
@@ -16,7 +16,11 @@ export interface DeletionCriteria {
 export interface ImageUpdateData {
   processed?: boolean
   verified?: boolean
-  keypoints?: string
+  keypoints?: string | Keypoint[] // Allow both string and Keypoint array
+}
+export type Keypoint = {
+  x: number
+  y: number
 }
 
 // probably overcomplicating things but lets me clearly see if i have a problem
@@ -55,6 +59,7 @@ export interface ImageFile {
   processed: boolean
   verified: boolean
   data?: AxoData
+  keypoints?: string | Keypoint[]
 }
 
 /**
