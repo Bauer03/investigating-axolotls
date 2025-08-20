@@ -2,12 +2,21 @@ export type fileOptions = 'file' | 'folder'
 
 // src/types.ts
 
-export type AxoData = {
+export interface AxoData {
   image_name: string
-  bounding_box: number[][]
+  bounding_box: number[]
   keypoints: Keypoint[]
 }
 
+export interface ImageFile {
+  inputPath: string
+  outputPath: string
+  name: string
+  processed: boolean
+  verified: boolean
+  keypoints?: Keypoint[]
+  data?: AxoData
+}
 // passed to deletion functions, used to determine WHAT images to delete. for single deletions, unnecessary. only need path.
 export interface DeletionCriteria {
   processed?: boolean
@@ -18,7 +27,8 @@ export interface ImageUpdateData {
   verified?: boolean
   keypoints?: string | Keypoint[] // Allow both string and Keypoint array
 }
-export type Keypoint = {
+export interface Keypoint {
+  name: 'Snout' | 'Neck' | 'Mid-body' | 'Tail Base'
   x: number
   y: number
 }
@@ -53,14 +63,6 @@ export interface AxolotlAPI {
   }
 }
 
-export interface ImageFile {
-  name: string
-  inputPath: string
-  processed: boolean
-  verified: boolean
-  data?: AxoData
-  keypoints?: string | Keypoint[]
-}
 
 /**
  * Calculates the Euclidean distance between two keypoints.

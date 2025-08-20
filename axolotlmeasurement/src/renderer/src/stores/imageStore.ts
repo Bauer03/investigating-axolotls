@@ -6,6 +6,41 @@ export const useImageStore = defineStore('imageStore', () => {
   const imageList = ref<ImageFile[]>([])
   const selectedValidationImagePath = ref<string | null>(null)
   const selectedGalleryImagePath = ref<string | null>(null)
+  const KEYPOINT_NAMES: Keypoint['name'][] = ['Snout', 'Neck', 'Mid-body', 'Tail Base']
+
+  /**
+   * Parses the raw, stringified, deeply nested array from the database
+   * into the clean Keypoint[] format used by the UI components.
+   * @param rawKeypoints - Can be a string or already parsed array.
+   * @returns A clean Keypoint[] array or an empty array if input is invalid.
+   */
+  function parseAndFormatKeypoints(rawKeypoints: any): Keypoint[] {
+    if (!rawKeypoints) return []
+
+    let parsed: number[][] = []
+    try {
+      // Data can be a string '[[[x,y],...]]' or already an array [[x,y],...]
+      const data = typeof rawKeypoints === 'string' ? JSON.parse(rawKeypoints) : rawKeypoints
+
+      // The data is ridiculously nested, so we drill down.
+      if (Array.isArray(data) && Array.isArray(data[0]) && Array.isArray(data[0][0])) {
+        parsed = data[0]
+      } else if (Array.isArray(data) && Array.isArray(data[0]) && typeof data[0][0] === 'number') {
+        parsed = data
+      } else {
+        return [] // Return empty if format is unexpected
+      }
+
+      return parsed.map((point, index) => ({
+        name: KEYPOINT_NAMES[index] || `KP ${index + 1}`, // Fallback name
+        x: point[0],
+        y: point[1]
+      }))
+    } catch (error) {
+      console.error('Failed to parse keypoints:', rawKeypoints, error)
+      return []
+    }
+  }
 
   async function addImages(files: ImageFile[]): Promise<void> {
     const successfullyAdded: ImageFile[] = []
@@ -40,7 +75,9 @@ export const useImageStore = defineStore('imageStore', () => {
     if (!selectedValidationImagePath.value) {
       return null
     }
-    return imageList.value.find((image) => image.inputPath === selectedValidationImagePath.value) || null
+    return (
+      imageList.value.find((image) => image.inputPath === selectedValidationImagePath.value) || null
+    )
   })
 
   const selectedGalleryImage = computed(() => {
@@ -98,17 +135,28 @@ export const useImageStore = defineStore('imageStore', () => {
   }
 
   async function bulkUpdateProcessedImages(processedData: AxoData[]): Promise<void> {
-    const resultsMap = new Map(processedData.map((data) => [data.image_name, data]))
+    // Create a map for quick lookup by image name
+    const resultsMap = new Map<string, AxoData>()
+    for (const result of processedData) {
+      resultsMap.set(result.image_name, result)
+    }
 
     for (const imageInStore of imageList.value) {
       if (resultsMap.has(imageInStore.name)) {
         const result = resultsMap.get(imageInStore.name)!
+        const formattedKeypoints = parseAndFormatKeypoints(result.keypoints)
 
+        // Update local state
         imageInStore.processed = true
-        imageInStore.data = result
+        imageInStore.keypoints = formattedKeypoints // Use the formatted data
+        if (imageInStore.data) {
+          imageInStore.data.keypoints = formattedKeypoints
+        }
 
+        // Persist change to the database (expects the original string format, this is where i wish electron store were easier to deal with using ts)
         await window.api.updateImage(imageInStore.inputPath, {
           processed: true,
+          // The 'result.keypoints' is already in the stringified format the DB needs
           keypoints: JSON.stringify(result.keypoints)
         })
       }
@@ -118,22 +166,18 @@ export const useImageStore = defineStore('imageStore', () => {
   async function updateImage(inputPath: string, updates: Partial<ImageFile>): Promise<void> {
     const imageInStore = imageList.value.find((img) => img.inputPath === inputPath)
     if (imageInStore) {
-      // Handle keypoints update properly
       if ('keypoints' in updates && updates.keypoints) {
         const keypoints = updates.keypoints as Keypoint[]
-
-        // Update the keypoints field
         imageInStore.keypoints = keypoints
 
-        // Also update the data.keypoints if data exists
         if (!imageInStore.data) {
           imageInStore.data = {
             image_name: imageInStore.name,
             bounding_box: [],
-            keypoints: keypoints // Keep as Keypoint[] objects
+            keypoints: keypoints
           }
         } else {
-          imageInStore.data.keypoints = keypoints // Keep as Keypoint[] objects
+          imageInStore.data.keypoints = keypoints
         }
       }
 
@@ -143,17 +187,21 @@ export const useImageStore = defineStore('imageStore', () => {
       // Prepare database updates
       const dbUpdates: Record<string, unknown> = { ...updates }
       if (dbUpdates.keypoints) {
-        dbUpdates.keypoints = JSON.stringify(dbUpdates.keypoints)
+        // Convert keypoints back to the raw format for database storage
+        const rawKeypoints = [(dbUpdates.keypoints as Keypoint[]).map((kp) => [kp.x, kp.y])]
+        dbUpdates.keypoints = JSON.stringify(rawKeypoints)
       }
 
       await window.api.updateImage(inputPath, dbUpdates)
     }
   }
-
   async function loadExistingImages(): Promise<void> {
     try {
       const existingImages = await window.api.getDBImages()
-      imageList.value = existingImages
+      imageList.value = existingImages.map((img) => ({
+        ...img,
+        keypoints: parseAndFormatKeypoints(img.keypoints)
+      }))
     } catch (error) {
       console.error('Failed to load existing images:', error)
     }

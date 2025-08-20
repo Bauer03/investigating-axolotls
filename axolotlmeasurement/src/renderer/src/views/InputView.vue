@@ -119,6 +119,7 @@ async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
     const newImage = {
       name: fileName,
       inputPath: path,
+      outputPath: '', // not fully certian how i'll use this but
       verified: false,
       processed: false,
       data: {

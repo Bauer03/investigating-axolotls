@@ -24,11 +24,16 @@
 
     <div class="validate-right flx col gp1">
       <div class="glass-preview flx">
-        <img
-          :src="selectedImage?.inputPath || ''"
-          alt="selected image"
+        <KeypointDisplay
+          v-if="selectedImage"
+          :image-src="selectedImage.inputPath"
+          :keypoints="
+            typeof selectedImage.keypoints === 'string'
+              ? JSON.parse(selectedImage.keypoints)
+              : selectedImage.keypoints
+          "
           class="selected-image validate-image"
-          @click="selectedImage && openFullscreen(selectedImage)"
+          @click="openFullscreen(selectedImage)"
         />
       </div>
 
@@ -55,7 +60,13 @@
 
   <div v-if="fullscreenImage" class="fullscreen-modal" @click.self="closeFullscreen">
     <div class="fullscreen-content">
-      <img :src="fullscreenImage.inputPath" alt="Fullscreen Image" class="fullscreen-image" />
+      <KeypointDisplay
+        v-if="fullscreenImage"
+        v-model:keypoints="editedKeypoints"
+        :image-src="fullscreenImage.inputPath"
+        :is-editable="true"
+        class="fullscreen-image"
+      />
       <div class="fullscreen-buttons flx gp1 jc-end">
         <button class="discreet-btn" @click="closeFullscreen">Cancel</button>
         <button class="accent-btn" @click="saveAndCloseFullscreen">Save and Close</button>
@@ -68,6 +79,7 @@
 import { useImageStore } from '../stores/imageStore'
 import { computed, onMounted, ref, Ref } from 'vue'
 import { ImageFile, Keypoint } from 'src/types'
+import KeypointDisplay from '../components/KeypointDisplay.vue'
 
 const imageStore = useImageStore()
 const validationImages = computed(() => imageStore.validationList)
