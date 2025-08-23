@@ -68,7 +68,7 @@ const scaledKeypoints = computed(() => {
   }))
 })
 
-// --- Drag and Drop Handlers ---
+// following logic on drag and drop not mine, pasted & modified from csci432
 function startDrag(event: MouseEvent, index: number): void {
   if (!props.isEditable) return
   event.preventDefault()

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!imageStore.imageList || imagesToProcess.length <= 0" class="flx col al-c gp2 pd2">
+  <div v-if="!imageStore.imageList || imagesToProcess.length <= 0" class="flx col al-c gp2 pd4">
     <div>
       <h1 class="txt-c">Welcome to MeasuringAxolotls!</h1>
     </div>
@@ -166,7 +166,7 @@ async function startProcessing(): Promise<void> {
     alert(`Processed ${fileCount} images in ${timeTaken.toFixed(2)} seconds.`)
 
     // after images have been processed, I'm sending the user to validate view to verify changes
-    router.push('Verify')
+    router.push('Validate')
   } catch (error) {
     console.error('Error processing images:', error)
     alert('There was an error processing the images. Please check the console for more details.')

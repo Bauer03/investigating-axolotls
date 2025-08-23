@@ -30,13 +30,17 @@
   font-weight: normal;
 }
 
-html {
+html,
+body,
+#app {
   height: 100%;
+  margin: 0;
+  overflow: hidden; /* prevent the whole app from scrolling */
 }
 
 body {
   margin: 0;
-  padding: var(--sp2);
+  padding: var(--sp2) var(--sp2) var(--sp1) var(--sp2);
   height: 100%;
   color: var(--txt-col);
   background: var(--bg-col);
@@ -46,13 +50,6 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-#app {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  /* gap: var(--sp2); */
 }
 
 button {
