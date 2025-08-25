@@ -28,7 +28,7 @@ export interface ImageUpdateData {
   keypoints?: string | Keypoint[] // Allow both string and Keypoint array
 }
 export interface Keypoint {
-  name: 'Snout' | 'Neck' | 'Mid-body' | 'Tail Base'
+  name: string // can make any string
   x: number
   y: number
 }
@@ -61,8 +61,10 @@ export interface AxolotlAPI {
     readFolder: (filePaths: string[], encoding?: BufferEncoding) => Promise<string[] | Buffer[]>
     processImages: (paths: string[]) => Promise<ProcessSuccess | ProcessError>
   }
+  downloadAllImages: (
+    files: { name: string; data: string }[]
+  ) => Promise<{ success: boolean; message: string }>
 }
-
 
 /**
  * Calculates the Euclidean distance between two keypoints.

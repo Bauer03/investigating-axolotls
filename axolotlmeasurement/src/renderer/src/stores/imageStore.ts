@@ -6,7 +6,7 @@ export const useImageStore = defineStore('imageStore', () => {
   const imageList = ref<ImageFile[]>([])
   const selectedValidationImagePath = ref<string | null>(null)
   const selectedGalleryImagePath = ref<string | null>(null)
-  const KEYPOINT_NAMES: Keypoint['name'][] = ['Snout', 'Neck', 'Mid-body', 'Tail Base']
+  // const KEYPOINT_NAMES: Keypoint['name'][] = ['Snout', 'Neck', 'Mid-body', 'Tail Base']
 
   /**
    * Parses the raw, stringified, deeply nested array from the database
@@ -32,7 +32,7 @@ export const useImageStore = defineStore('imageStore', () => {
       }
 
       return parsed.map((point, index) => ({
-        name: KEYPOINT_NAMES[index] || `KP ${index + 1}`, // Fallback name
+        name: `Keypt ${index + 1}`, // Fallback name
         x: point[0],
         y: point[1]
       }))

@@ -15,13 +15,7 @@ const api: AxolotlAPI = {
     ipcRenderer.invoke('file-upload-request', type),
 
   fs: {
-    readFile: async (filePath: string, encoding?: BufferEncoding): Promise<string | Buffer> => {
-      if (encoding) {
-        return fs.readFile(filePath, encoding)
-      } else {
-        return fs.readFile(filePath)
-      }
-    },
+    readFile: (filePath: string): Promise<string> => ipcRenderer.invoke('fs:readFile', filePath),
 
     writeFile: async (filePath: string, data: string | Buffer): Promise<void> => {
       await fs.writeFile(filePath, data)
@@ -59,7 +53,12 @@ const api: AxolotlAPI = {
         } as ProcessError
       }
     }
-  }
+  },
+
+  downloadAllImages: (
+    files: { name: string; data: string }[]
+  ): Promise<{ success: boolean; message: string }> =>
+    ipcRenderer.invoke('download-all-images', files)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

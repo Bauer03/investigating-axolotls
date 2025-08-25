@@ -17,7 +17,7 @@
             </span>
           </button>
           <div v-if="isDropdownOpen" class="dropdown-menu glass-panel">
-            <div @click="downloadAllImageData" class="glass-list-item">
+            <div @click="downloadAllImages()" class="glass-list-item">
               Images <span class="material-icons-outlined">download</span>
             </div>
             <div @click="downloadAllKeypointData" class="glass-list-item">
@@ -105,7 +105,7 @@ import KeypointDisplay from '../components/KeypointDisplay.vue'
 const imageStore = useImageStore()
 const galleryImages = computed(() => imageStore.galleryList)
 const selectedImage = computed(() => imageStore.selectedGalleryImage)
-
+const isDownloadingAll = ref(false)
 const isDropdownOpen = ref(false)
 const dropdownRef = ref<HTMLElement | null>(null)
 const toggleDropdown = (): void => {
@@ -114,6 +114,74 @@ const toggleDropdown = (): void => {
 onClickOutside(dropdownRef, () => {
   isDropdownOpen.value = false
 })
+
+const downloadAllImages = async (): Promise<void> => {
+  if (isDownloadingAll.value || imageStore.imageList.length === 0) return
+
+  isDownloadingAll.value = true
+  console.log('Starting batch download process...')
+
+  const filesToSave: { name: string; data: string }[] = []
+
+  // Use a canvas that is not attached to the DOM
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) {
+    alert('Could not create a canvas context.')
+    isDownloadingAll.value = false
+    return
+  }
+
+  // Process each image sequentially to avoid overwhelming the renderer
+  for (const image of imageStore.imageList) {
+    try {
+      const base64Data = await window.api.fs.readFile(image.inputPath)
+      const imageUrl = `data:image/png;base64,${base64Data}`
+
+      // We need to wrap the image loading in a promise
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const img = new Image()
+        img.onload = () => {
+          canvas.width = img.naturalWidth
+          canvas.height = img.naturalHeight
+          ctx.drawImage(img, 0, 0)
+
+          // Draw keypoints
+          if (image.keypoints) {
+            image.keypoints.forEach((kp) => {
+              ctx.beginPath()
+              ctx.arc(kp.x, kp.y, 10, 0, 2 * Math.PI)
+              ctx.fillStyle = 'hsla(160, 100%, 37%, 0.75)'
+              ctx.fill()
+              ctx.strokeStyle = 'white'
+              ctx.lineWidth = 2
+              ctx.stroke()
+            })
+          }
+          resolve(canvas.toDataURL('image/png'))
+        }
+        img.onerror = reject
+        img.src = imageUrl
+      })
+
+      filesToSave.push({ name: `processed_${image.name}.png`, data: dataUrl })
+    } catch (error) {
+      console.error(`Failed to process image ${image.name}:`, error)
+      // Optionally, you can decide to stop or continue on error
+    }
+  }
+
+  // Now send the complete list to the main process
+  if (filesToSave.length > 0) {
+    console.log(`Sending ${filesToSave.length} images to the main process to be saved.`)
+    const result = await window.api.downloadAllImages(filesToSave)
+    alert(result.message) // Show the result to the user
+  } else {
+    alert('No images were processed to download.')
+  }
+
+  isDownloadingAll.value = false
+}
 
 // clearing gallery
 const confirmDeleteAll = (): void => {
@@ -130,18 +198,56 @@ const deleteSingleImage = (image: ImageFile | null): void => {
   imageStore.removeImage(image.inputPath)
 }
 
-// --- Placeholder functions (unchanged) ---
-const downloadAllImageData = async (): Promise<void> => {
-  alert('Download All IMAGES functionality to be implemented!')
-  isDropdownOpen.value = false
-}
 const downloadAllKeypointData = async (): Promise<void> => {
   alert('Download All DATA functionality to be implemented!')
   isDropdownOpen.value = false
 }
-const downloadImage = (image: ImageFile | null): void => {
+const downloadImage = async (image: ImageFile | null): Promise<void> => {
   if (!image) return
-  alert(`Downloading ${image.name}... (to be implemented)`)
+
+  try {
+    const base64Data = await window.api.fs.readFile(image.inputPath)
+
+    const imageUrl = `data:image/png;base64,${base64Data}`
+
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      ctx.drawImage(img, 0, 0)
+
+      // Draw keypoints
+      // Important note: I'm not adding the text next to keypoints on download. If that shoudl be the case, let me know.
+      if (image.keypoints) {
+        image.keypoints.forEach((kp) => {
+          ctx.beginPath()
+          ctx.arc(kp.x, kp.y, 10, 0, 2 * Math.PI)
+          ctx.fillStyle = 'hsla(160, 100%, 37%, 0.75)'
+          ctx.fill()
+          ctx.strokeStyle = 'white'
+          ctx.lineWidth = 2
+          ctx.stroke()
+        })
+      }
+
+      // Create a new data URL from the canvas and trigger the download
+      const dataUrl = canvas.toDataURL('image/png')
+      const link = document.createElement('a')
+      link.href = dataUrl
+      link.download = `processed_${image.name}.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    }
+    img.src = imageUrl
+  } catch (error) {
+    console.error(`Error preparing image for download: ${error}`)
+    alert('Failed to download image. See console for details.')
+  }
 }
 const copyData = (image: ImageFile | null): void => {
   if (!image) return

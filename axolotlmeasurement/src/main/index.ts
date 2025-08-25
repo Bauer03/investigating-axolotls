@@ -5,7 +5,7 @@ import icon from '../../resources/icon.png?asset'
 import { fileOptions, DeletionCriteria, ImageUpdateData } from '../types'
 import fetch from 'node-fetch'
 import Database from 'better-sqlite3'
-
+import fs from 'fs'
 export const db = new Database(join(app.getPath('userData'), 'axolotl-measurements.db'))
 
 // Create table if it doesn't exist, this runs every time app starts, but only triggers if no db exists.
@@ -80,7 +80,47 @@ app.whenReady().then(() => {
     return []
   })
 
-  ipcMain.handle('process-images', async (event, paths: string[]) => {
+  ipcMain.handle('fs:readFile', async (_event, filePath: string) => {
+    const buffer = await fs.promises.readFile(filePath)
+    return buffer.toString('base64')
+  })
+
+  ipcMain.handle(
+    'download-all-images',
+    async (_event, filesToSave: { name: string; data: string }[]) => {
+      // user selects file directory for mass save. May make folder auto in future?
+      const { canceled, filePath } = await dialog.showSaveDialog({
+        title: 'Save Processed Images',
+        buttonLabel: 'Save Here',
+        defaultPath: 'processed-images.zip'
+      })
+
+      if (canceled || !filePath) {
+        return { success: false, message: 'Save dialog was canceled.' }
+      }
+
+      const saveDirectory = join(filePath, '..')
+
+      try {
+        const savePromises = filesToSave.map((file) => {
+          const base64Data = file.data.replace(/^data:image\/png;base64,/, '')
+          const buffer = Buffer.from(base64Data, 'base64')
+          const fullPath = join(saveDirectory, basename(file.name))
+          return fs.promises.writeFile(fullPath, buffer)
+        })
+
+        await Promise.all(savePromises)
+
+        return { success: true, message: `Successfully saved ${filesToSave.length} images.` }
+      } catch (error) {
+        console.error('Failed to save images:', error)
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        return { success: false, message: `Error saving files: ${errorMessage}` }
+      }
+    }
+  )
+
+  ipcMain.handle('process-images', async (_: unknown, paths: string[]) => {
     try {
       const response = await fetch('http://localhost:8001/process-images', {
         method: 'POST',
@@ -113,7 +153,7 @@ app.whenReady().then(() => {
   })
 
   // Add image to database
-  ipcMain.handle('db:add-image', (event, image) => {
+  ipcMain.handle('db:add-image', (_: unknown, image) => {
     const stmt = db.prepare(
       'INSERT INTO images (name, inputPath, processed, verified, keypoints) VALUES (?, ?, ?, ?, ?)'
     )
@@ -124,7 +164,7 @@ app.whenReady().then(() => {
   })
 
   // Singe image deletion
-  ipcMain.handle('db:delete-image', (event, inputPath: string) => {
+  ipcMain.handle('db:delete-image', (_: unknown, inputPath: string) => {
     const stmt = db.prepare('DELETE FROM images WHERE inputPath = ?')
     const result = stmt.run(inputPath)
     if (result.changes > 0) {
@@ -134,7 +174,7 @@ app.whenReady().then(() => {
   })
 
   // got help from mr gpt here, haven't written proper sql before. turns out it's pretty cool heehe
-  ipcMain.handle('db:delete-images-where', (event, criteria: DeletionCriteria) => {
+  ipcMain.handle('db:delete-images-where', (_: unknown, criteria: DeletionCriteria) => {
     let whereClause = 'WHERE 1 = 1' // Start with a clause that is always true
     const params: (number | string)[] = []
 
@@ -164,7 +204,7 @@ app.whenReady().then(() => {
     return result.changes
   })
 
-  ipcMain.handle('db:update-image', (event, inputPath: string, data: ImageUpdateData) => {
+  ipcMain.handle('db:update-image', (_: unknown, inputPath: string, data: ImageUpdateData) => {
     // Convert boolean values to integers before building the query
     const convertedData: Record<string, unknown> = { ...data }
     if ('processed' in convertedData && typeof convertedData.processed === 'boolean') {
@@ -292,4 +332,7 @@ async function requestFolderContents(folderPath: string): Promise<string[]> {
     console.error('Error getting folder contents: ', error)
     throw error
   }
+}
+function basename(name: string): string {
+  return name.replace(/^.*[\\/]/, '')
 }
