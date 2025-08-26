@@ -101,7 +101,7 @@ async function requestFileDialog(type: fileOptions): Promise<void> {
   }
 }
 
-// This function is only triggered on
+// This function is only triggered on attempt at file upload
 async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
   // prevents uploading duplicates
   const existingPaths = new Set(imagesToProcess.value.map((image) => image.inputPath))
