@@ -14,7 +14,7 @@ export const useImageStore = defineStore('imageStore', () => {
    * @param rawKeypoints - Can be a string or already parsed array.
    * @returns A clean Keypoint[] array or an empty array if input is invalid.
    */
-  function parseAndFormatKeypoints(rawKeypoints: any): Keypoint[] {
+  function parseAndFormatKeypoints(rawKeypoints: string | Keypoint[] | undefined): Keypoint[] {
     if (!rawKeypoints) return []
 
     let parsed: number[][] = []
@@ -22,7 +22,7 @@ export const useImageStore = defineStore('imageStore', () => {
       // Data can be a string '[[[x,y],...]]' or already an array [[x,y],...]
       const data = typeof rawKeypoints === 'string' ? JSON.parse(rawKeypoints) : rawKeypoints
 
-      // The data is ridiculously nested, so we drill down.
+      //i don't know why it's this far nestedddd 😭 i think I'm storing it further each time, have to rewrite this eventually
       if (Array.isArray(data) && Array.isArray(data[0]) && Array.isArray(data[0][0])) {
         parsed = data[0]
       } else if (Array.isArray(data) && Array.isArray(data[0]) && typeof data[0][0] === 'number') {

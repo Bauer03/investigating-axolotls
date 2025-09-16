@@ -146,7 +146,7 @@ app.whenReady().then(() => {
       .all()
       .map((img) => ({
         ...img,
-        processed: Boolean(img.processed), // man it really hurts to have to do this i'm not sure if it's good convention
+        processed: Boolean(img.processed),
         verified: Boolean(img.verified),
         data: { keypoints: JSON.parse(img.keypoints || '[]') }
       }))
@@ -173,7 +173,7 @@ app.whenReady().then(() => {
     return result.changes > 0
   })
 
-  // got help from mr gpt here, haven't written proper sql before. turns out it's pretty cool heehe
+  // got help from mr gpt here
   ipcMain.handle('db:delete-images-where', (_: unknown, criteria: DeletionCriteria) => {
     let whereClause = 'WHERE 1 = 1' // Start with a clause that is always true
     const params: (number | string)[] = []
@@ -274,7 +274,7 @@ async function handleUploadRequest(win: BrowserWindow, type: fileOptions): Promi
     type === 'file'
       ? {
           properties: ['openFile', 'multiSelections'],
-          filters: [{ name: 'Images', extensions: ['jpeg', 'jpg', 'png', 'gif'] }]
+          filters: [{ name: 'Images', extensions: ['jpeg', 'jpg', 'png'] }]
         }
       : {
           properties: ['openDirectory', 'createDirectory']
@@ -282,8 +282,6 @@ async function handleUploadRequest(win: BrowserWindow, type: fileOptions): Promi
 
   const result = await dialog.showOpenDialog(win, options)
 
-  // note that I'm allowing the user to send an image through the model multiple times, since this might be an intended behavior.
-  // this doens't mean you can select the same image multiple times - that's being prevented.
   if (!result.canceled) {
     if (type === 'file') {
       console.log('Picked: ' + result.filePaths)
@@ -303,10 +301,6 @@ async function handleUploadRequest(win: BrowserWindow, type: fileOptions): Promi
   }
   return []
 }
-
-// async function handleProcessedImage() {
-// hmm don't think i actually need this but leaving for train of thought
-// }
 
 /**
  * Passes in folder path to python server, returns file paths in that folder if they exist.

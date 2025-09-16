@@ -6,7 +6,7 @@
     <div class="flx col gp1">
       <span class="txt-c">Upload images to get started.</span>
       <div class="draganddrop glass-panel flx col al-c gp1 pd2">
-        <span>Drag and drop images/folders here (TODO)</span>
+        <span>Drag and drop images/folders here (WIP)</span>
         <span>or</span>
         <div class="flx gp1">
           <button class="accent-btn gp1 flx al-c" @click="requestFileDialog('file')">
@@ -95,6 +95,10 @@ async function requestFileDialog(type: fileOptions): Promise<void> {
 
   if (filePaths && filePaths.length > 0) {
     console.log('Selected file paths in renderer:', filePaths)
+    filePaths.filter((path) => {
+      // check database and filter out paths already present in db? Not sure if this is the right spot
+      return path.length >= 1 // placeholder
+    })
     readSelectedFiles(filePaths)
   } else {
     console.warn('No files selected or dialog was canceled.')
@@ -150,12 +154,14 @@ async function removeFile(path: string): Promise<void> {
 async function startProcessing(): Promise<void> {
   isLoading.value = true
   const initTime = Date.now()
-  const paths = imageStore.imageList.map((elm) => elm.inputPath)
+  let paths = imageStore.imageList.map((elm) => elm.inputPath)
   const fileCount = paths.length
 
   try {
     const res: ProcessSuccess | ProcessError = await window.api.fs.processImages(paths)
     const timeTaken = (Date.now() - initTime) / 1000
+    paths = []
+    clearInput()
 
     if ('error' in res) {
       throw new Error(res.error)
