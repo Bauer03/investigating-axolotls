@@ -7,7 +7,7 @@
     <div class="validate-left flx col gp05">
       <h3 class="txt-col">Images to Validate</h3>
       <div class="action-bar flx jc-sb">
-        <button class="danger-btn discreet-btn flx al-c jc-c gp1" @click="confirmClearValidation">
+        <button class="danger-btn discreet-btn flx al-c jc-c gp1" @click="confirmClearValidation()">
           <span class="material-icons-outlined">delete_sweep</span>
           <span>Clear List</span>
         </button>

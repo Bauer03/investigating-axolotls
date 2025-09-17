@@ -11,8 +11,7 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
-    "start": "concurrently \"npm run start-backend\" \"electron-vite preview\"",
-    "start-mac": "concurrently \"npm run start-backend-mac\" \"electron-vite preview\"",
+    "start": "electron-vite preview",
     "start-backend": "cd src/backend && \"venv\\Scripts\\activate\" && uvicorn main:app --reload --host localhost --port 8001",
     "start-backend-mac": "cd src/backend && source venv/bin/activate && uvicorn main:app --reload --host localhost --port 8001",
     "dev": "electron-vite dev",
@@ -21,7 +20,14 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
-    "build:linux": "npm run build && electron-builder --linux"
+    "build:linux": "npm run build && electron-builder --linux",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "files": [
+      "**/*",
+      "!dist/**/*"
+    ]
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",

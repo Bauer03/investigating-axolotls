@@ -156,6 +156,7 @@ async function startProcessing(): Promise<void> {
   const initTime = Date.now()
   let paths = imagesToProcess.value.map((elm) => elm.inputPath)
   const fileCount = paths.length
+  console.log(paths)
 
   try {
     const res: ProcessSuccess | ProcessError = await window.api.fs.processImages(paths)

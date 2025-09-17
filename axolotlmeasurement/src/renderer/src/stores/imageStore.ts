@@ -105,6 +105,8 @@ export const useImageStore = defineStore('imageStore', () => {
     if (success) {
       imageList.value = imageList.value.filter((image) => image.inputPath !== pathToRemove)
     }
+    selectedValidationImagePath.value = validationList.value[0].inputPath
+    selectedGalleryImagePath.value = galleryList.value[0].inputPath
   }
 
   async function clearAllInputImages(): Promise<void> {
