@@ -52,7 +52,7 @@
               ? JSON.parse(selectedImage.keypoints)
               : selectedImage.keypoints
           "
-          class="selected-image gallery-image"
+          class="selected-image"
           @click="openFullscreen(selectedImage)"
         />
       </div>
@@ -323,6 +323,8 @@ onMounted(() => {
 }
 
 .gallery-image {
+  user-select: none;
+  -webkit-user-drag: none;
   width: 100%;
   height: auto;
   object-fit: contain;

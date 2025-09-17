@@ -138,6 +138,8 @@ onUnmounted(() => {
 }
 
 .display-image {
+  user-select: none;
+  -webkit-user-drag: none;
   max-width: 100%;
   height: auto;
   opacity: 0.8;

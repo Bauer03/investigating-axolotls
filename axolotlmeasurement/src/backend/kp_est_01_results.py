@@ -4,12 +4,22 @@ from pathlib import Path
 import sys
 import json
 
-# --- Path Refactoring ---
-script_dir = Path(__file__).resolve().parent
-project_root = script_dir.parents[1]
-model_path = project_root / 'resources' / 'best.pt'
+# Get correct path for bundled resources
+# (important for built app working on anyone's OS other than mine lol)
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
 
-# --- Initialize Calvin's YOLO model ---
+    return os.path.join(base_path, relative_path)
+
+# --- Path Refactoring ---
+model_path = resource_path("best.pt")
+
+# --- Initialize YOLO model ---
 model = YOLO(model_path)
 
 # --- Handling Input/Output ---
@@ -20,7 +30,7 @@ if len(sys.argv) < 2:
 
 image_files = [Path(p) for p in sys.argv[1:]]
 
-# also printing to stderr so I don't accidentally read in my program.
+# printing to stderr so I don't accidentally read in my program, because of how this file is set up.
 print(f"Found {len(image_files)} images to process...", file=sys.stderr)
 
 all_results = []

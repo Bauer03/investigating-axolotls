@@ -123,12 +123,6 @@ export const useImageStore = defineStore('imageStore', () => {
     })
   })
 
-  async function getValidationList(): Promise<ImageFile[]> {
-    return imageList.value.filter((image) => {
-      return image.processed && !image.verified
-    })
-  }
-
   async function clearGallery(): Promise<void> {
     await window.api.deleteImagesWhere({ verified: true })
     imageList.value = imageList.value.filter((image) => !image.verified)
@@ -192,7 +186,10 @@ export const useImageStore = defineStore('imageStore', () => {
         dbUpdates.keypoints = JSON.stringify(rawKeypoints)
       }
 
-      await window.api.updateImage(inputPath, dbUpdates)
+      try {
+        await window.api.updateImage(inputPath, dbUpdates)
+      } catch (error) {
+        console.error(`Failed to update image ${inputPath}:`, error)
     }
   }
   async function loadExistingImages(): Promise<void> {
@@ -227,7 +224,6 @@ export const useImageStore = defineStore('imageStore', () => {
     selectedValidationImage,
     unselectImage,
     selectedGalleryImage,
-    getValidationList,
     galleryList,
     validationList
   }

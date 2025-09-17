@@ -6,3 +6,9 @@ out
 *.log*
 venv
 *.pt
+*.spec
+venv/
+*.pyc
+__pycache__/
+.env
+axolotl-server

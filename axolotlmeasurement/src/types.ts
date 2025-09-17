@@ -1,7 +1,5 @@
 export type fileOptions = 'file' | 'folder'
 
-// src/types.ts
-
 export interface AxoData {
   image_name: string
   bounding_box: number[]
@@ -68,7 +66,8 @@ export interface AxolotlAPI {
 
 /**
  * Calculates the Euclidean distance between two keypoints.
- * Pulled from online. May have to format stuff before passing it to this if there are erorrs
+ * Can't just comment out, as I'll have to refactor how this works given the structure of keypoints.
+ * Will look at how this was written in the first place and then go from there, to make sure I can implement correctly.
  */
 // export function calculateDistance(points: Keypoint[]): number {
 //   if (points.length < 2) {

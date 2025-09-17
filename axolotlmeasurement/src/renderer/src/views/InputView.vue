@@ -154,7 +154,7 @@ async function removeFile(path: string): Promise<void> {
 async function startProcessing(): Promise<void> {
   isLoading.value = true
   const initTime = Date.now()
-  let paths = imageStore.imageList.map((elm) => elm.inputPath)
+  let paths = imagesToProcess.value.map((elm) => elm.inputPath)
   const fileCount = paths.length
 
   try {
