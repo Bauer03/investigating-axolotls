@@ -190,6 +190,7 @@ export const useImageStore = defineStore('imageStore', () => {
         await window.api.updateImage(inputPath, dbUpdates)
       } catch (error) {
         console.error(`Failed to update image ${inputPath}:`, error)
+      }
     }
   }
   async function loadExistingImages(): Promise<void> {
