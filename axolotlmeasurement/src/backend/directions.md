@@ -15,7 +15,6 @@ If venv folder exists (or once you've set this virtual env folder up):
 2) Run npm install
 3) Run npm run start-backend (or start-backend mac, depending on OS). This will launch python server. KEEP THIS OPEN
 4) Open a separate terminal tab and run npm run start. This will start the electron application (including main/renderer electron processes). ALSO KEEP THIS TAB OPEN.
-5) To make changes to my code, press ctrl+c in the electron process to shut it down, then run npm run start again. The python server can run in the background and should work with edits, but you can shut it down & restart it as well, if you'd like/if you encounter errors.
+5) To view any changes you make to my code, press ctrl+c in the electron process to shut it down, then run npm run start again. The python server can run in the background and should work without needing to be restarted when edits to the code are made, but you can shut it down/restart it however you want.
 
-Changes aren't hot reloaded by default, ctrl+c out of the 'npm run start' command and re-run it to see changes.
- - I know there's ways to get hot reload working, but realistically it takes a few minutes to set up and as is, I can press ctrl+c, up arrow, and enter quickly, so I don't bother.
+I know there are ways to get hot reload working, but realistically I can press ctrl+c, up arrow, and enter quickly, so I don't bother.
