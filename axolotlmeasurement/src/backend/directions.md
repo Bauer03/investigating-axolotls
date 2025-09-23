@@ -1,9 +1,12 @@
 ## Virtual Environment setup (allows temporary installation of python packages)
 
+Before getting started, ensure you have python installed on your computer.
+To check, run python --version or python3 --version. If you have either installed, you'll get the version number.
+
 1) Navigate to src/backend
 
 If no venv folder:
-2) python3 -m venv venv (MacOS/Linux) or python -m venv venv (Windows) -> This creates a virtual environment named 'venv'
+2) python3 -m venv venv (may change depending on what version of python you have installed)-> This creates a virtual environment named 'venv'
 
 If venv folder exists (or once you've set this virtual env folder up):
 3) source venv/bin/activate (macOS/Linux) or venv\Scripts\activate (Windows) -> This activates the virtual environment
@@ -14,7 +17,7 @@ If venv folder exists (or once you've set this virtual env folder up):
 1) Navigate to axolotlmeasurement directory
 2) Run npm install
 3) Run npm run start-backend (or start-backend mac, depending on OS). This will launch python server. KEEP THIS OPEN
-4) Open a separate terminal tab and run npm run start. This will start the electron application (including main/renderer electron processes). ALSO KEEP THIS TAB OPEN.
+4) Open A SEPARATE terminal tab and run npm run start. This will start the electron application (including main/renderer electron processes). ALSO KEEP THIS TAB OPEN.
 5) To view any changes you make to my code, press ctrl+c in the electron process to shut it down, then run npm run start again. The python server can run in the background and should work without needing to be restarted when edits to the code are made, but you can shut it down/restart it however you want.
 
 I know there are ways to get hot reload working, but realistically I can press ctrl+c, up arrow, and enter quickly, so I don't bother.
