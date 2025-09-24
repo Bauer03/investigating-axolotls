@@ -37,7 +37,11 @@
       </div>
     </div>
 
-    <div class="flx col pd1 w-full selection-container br jc-sb gp05">
+    <div v-if="isLoading === true" class="flx pd4 jc-c">
+      <span class="material-icons-outlined loading icon">progress_activity</span>
+    </div>
+
+    <div v-else class="flx col pd1 w-full selection-container br jc-sb gp05">
       <!-- check w/ calvin about making gap between list items smaller -->
       <TransitionGroup name="list">
         <div v-for="image in imagesToProcess" :key="image.inputPath" class="glass-list-item">

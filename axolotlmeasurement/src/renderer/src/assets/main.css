@@ -240,6 +240,12 @@ body.modal-open {
   overflow: hidden; /* contain router views */
 }
 
+.loading {
+  animation: loading 0.7s ease-in-out infinite;
+  transform-origin: center;
+  height: 4rem;
+}
+
 /* Glass Panel for Content Areas */
 .glass-panel { /* used in all three files */
   background: linear-gradient(135deg,
@@ -333,6 +339,14 @@ body.modal-open {
     rgba(228, 113, 36, 0.6) 100%
   );
   box-shadow: 0 4px 12px rgba(228, 113, 36, 0.3);
+}
+
+@keyframes loading {
+  from {
+    transform: rotate(0deg);
+  } to {
+    transform: rotate(360deg);
+  }
 }
 
 /* default electron breakpoints for media queries. keeping in case they're relevant, idrk mobile dev */
