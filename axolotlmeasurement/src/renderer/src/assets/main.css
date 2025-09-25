@@ -242,8 +242,6 @@ body.modal-open {
 
 .loading {
   animation: loading 0.7s ease-in-out infinite;
-  transform-origin: center;
-  height: 4rem;
 }
 
 /* Glass Panel for Content Areas */

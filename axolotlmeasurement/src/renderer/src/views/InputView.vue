@@ -38,7 +38,7 @@
     </div>
 
     <div v-if="isLoading === true" class="flx pd4 jc-c">
-      <span class="material-icons-outlined loading icon">progress_activity</span>
+      <span class="material-symbols-outlined loading icon">progress_activity</span>
     </div>
 
     <div v-else class="flx col pd1 w-full selection-container br jc-sb gp05">
