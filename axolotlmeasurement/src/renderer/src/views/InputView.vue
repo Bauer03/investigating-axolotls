@@ -166,7 +166,6 @@ async function startProcessing(): Promise<void> {
     const res: ProcessSuccess | ProcessError = await window.api.fs.processImages(paths)
     const timeTaken = (Date.now() - initTime) / 1000
     paths = []
-    clearInput()
 
     if ('error' in res) {
       throw new Error(res.error)

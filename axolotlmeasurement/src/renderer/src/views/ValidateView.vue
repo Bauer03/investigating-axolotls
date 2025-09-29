@@ -5,7 +5,7 @@
 
   <div v-else class="content flx pd1 pt2">
     <div class="validate-left flx col gp05">
-      <h3 class="txt-col">Images to Validate</h3>
+      <h3 class="txt-col">{{ headertext }}</h3>
       <div class="action-bar flx jc-sb">
         <button class="danger-btn discreet-btn flx al-c jc-c gp1" @click="confirmClearValidation()">
           <span class="material-icons-outlined">delete_sweep</span>
@@ -36,11 +36,7 @@
         <KeypointDisplay
           v-if="selectedImage"
           :image-src="selectedImage.inputPath"
-          :keypoints="
-            typeof selectedImage.keypoints === 'string'
-              ? JSON.parse(selectedImage.keypoints)
-              : selectedImage.keypoints
-          "
+          :keypoints="selectedImage.keypoints"
           class="selected-image validate-image"
           @click="openFullscreen(selectedImage)"
         />
@@ -80,9 +76,16 @@
 
 <script setup lang="ts">
 import { useImageStore } from '../stores/imageStore'
-import { computed, onMounted, ref, Ref } from 'vue'
+import { computed, ComputedRef, onMounted, ref, Ref } from 'vue'
 import { ImageFile, Keypoint } from 'src/types'
 import KeypointDisplay from '../components/KeypointDisplay.vue'
+const headertext: ComputedRef<string> = computed(() => {
+  return (
+    'Validating ' +
+    imageStore.validationList.length +
+    (imageStore.validationList.length === 1 ? ' image' : ' images')
+  )
+})
 
 const imageStore = useImageStore()
 const selectedImage = computed(() => imageStore.selectedValidationImage)
@@ -117,7 +120,7 @@ async function confirmImage(image: ImageFile | null): Promise<void> {
     const keypointsToSave = image.data?.keypoints || []
     await imageStore.updateImage(image.inputPath, {
       verified: true,
-      keypoints: keypointsToSave
+      data.keypoints = keypointsToSave
     })
     imageStore.selectImage(imageStore.validationList[0].inputPath, 'validation')
   }
@@ -129,8 +132,7 @@ const editedKeypoints: Ref<Keypoint[]> = ref([])
 
 function openFullscreen(image: ImageFile): void {
   fullscreenImage.value = image
-  const keypoints =
-    typeof image.keypoints === 'string' ? JSON.parse(image.keypoints) : image.keypoints || []
+  const keypoints = image.data?.keypoints
   editedKeypoints.value = JSON.parse(JSON.stringify(keypoints))
 }
 

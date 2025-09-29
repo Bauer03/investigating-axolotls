@@ -17,10 +17,10 @@
             </span>
           </button>
           <div v-if="isDropdownOpen" class="dropdown-menu glass-panel">
-            <div @click="downloadAllImages()" class="glass-list-item">
+            <div class="glass-list-item" @click="downloadAllImages()">
               Images <span class="material-icons-outlined">download</span>
             </div>
-            <div @click="downloadAllKeypointData" class="glass-list-item">
+            <div class="glass-list-item" @click="downloadAllKeypointData">
               Data (.csv) <span class="material-icons-outlined">download</span>
             </div>
           </div>
@@ -47,11 +47,7 @@
         <KeypointDisplay
           v-if="selectedImage"
           :image-src="selectedImage.inputPath"
-          :keypoints="
-            typeof selectedImage.keypoints === 'string'
-              ? JSON.parse(selectedImage.keypoints)
-              : selectedImage.keypoints
-          "
+          :keypoints="selectedImage.data?.keypoints"
           class="selected-image"
           @click="openFullscreen(selectedImage)"
         />
@@ -147,8 +143,8 @@ const downloadAllImages = async (): Promise<void> => {
           ctx.drawImage(img, 0, 0)
 
           // Draw keypoints
-          if (image.keypoints) {
-            image.keypoints.forEach((kp) => {
+          if (image.data?.keypoints) {
+            image.data.keypoints.forEach((kp) => {
               ctx.beginPath()
               ctx.arc(kp.x, kp.y, 10, 0, 2 * Math.PI)
               ctx.fillStyle = 'hsla(160, 100%, 37%, 0.75)'
@@ -222,8 +218,8 @@ const downloadImage = async (image: ImageFile | null): Promise<void> => {
 
       // Draw keypoints
       // Important note: I'm not adding the text next to keypoints on download. If that shoudl be the case, let me know.
-      if (image.keypoints) {
-        image.keypoints.forEach((kp) => {
+      if (image.data?.keypoints) {
+        image.data.keypoints.forEach((kp) => {
           ctx.beginPath()
           ctx.arc(kp.x, kp.y, 10, 0, 2 * Math.PI)
           ctx.fillStyle = 'hsla(160, 100%, 37%, 0.75)'
@@ -261,7 +257,9 @@ const editedKeypoints: Ref<Keypoint[]> = ref([])
 function openFullscreen(image: ImageFile): void {
   fullscreenImage.value = image
   const keypoints =
-    typeof image.keypoints === 'string' ? JSON.parse(image.keypoints) : image.keypoints || []
+    typeof image.data?.keypoints === 'string'
+      ? JSON.parse(image.data.keypoints)
+      : image.data?.keypoints || []
   editedKeypoints.value = JSON.parse(JSON.stringify(keypoints))
 }
 
@@ -273,7 +271,11 @@ function closeFullscreen(): void {
 async function saveAndCloseFullscreen(): Promise<void> {
   if (fullscreenImage.value) {
     await imageStore.updateImage(fullscreenImage.value.inputPath, {
-      keypoints: editedKeypoints.value
+      data: {
+        image_name: fullscreenImage.value.data?.image_name ?? '',
+        keypoints: editedKeypoints.value,
+        bounding_box: fullscreenImage.value.data?.bounding_box ?? []
+      }
     })
   }
   closeFullscreen()
