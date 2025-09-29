@@ -11,28 +11,32 @@ export const useImageStore = defineStore('imageStore', () => {
   /**
    * Parses the raw, stringified, deeply nested array from the database
    * into the clean Keypoint[] format used by the UI components.
-   * @param rawKeypoints - Can be a string or already parsed array.
+   * @param rawKeypoints - Can be a string, number[][], or already parsed array.
    * @returns A clean Keypoint[] array or an empty array if input is invalid.
    */
-  function parseAndFormatKeypoints(rawKeypoints: string | Keypoint[] | undefined): Keypoint[] {
+  function parseAndFormatKeypoints(
+    rawKeypoints: string | Keypoint[] | number[][] | undefined
+  ): Keypoint[] {
     if (!rawKeypoints) return []
 
     let parsed: number[][] = []
     try {
-      // Data can be a string '[[[x,y],...]]' or already an array [[x,y],...]
       const data = typeof rawKeypoints === 'string' ? JSON.parse(rawKeypoints) : rawKeypoints
 
-      //i don't know why it's this far nestedddd 😭 i think I'm storing it further each time, have to rewrite this eventually
+      // Handle the deeply nested array format from your backend
       if (Array.isArray(data) && Array.isArray(data[0]) && Array.isArray(data[0][0])) {
         parsed = data[0]
       } else if (Array.isArray(data) && Array.isArray(data[0]) && typeof data[0][0] === 'number') {
         parsed = data
+      } else if (Array.isArray(data) && data[0]?.name !== undefined) {
+        // Already in correct format
+        return data as Keypoint[]
       } else {
-        return [] // Return empty if format is unexpected
+        return []
       }
 
       return parsed.map((point, index) => ({
-        name: `Keypt ${index + 1}`, // Fallback name
+        name: `Keypoint ${index + 1}`,
         x: point[0],
         y: point[1]
       }))
@@ -41,7 +45,6 @@ export const useImageStore = defineStore('imageStore', () => {
       return []
     }
   }
-
   async function addImages(files: ImageFile[]): Promise<void> {
     const successfullyAdded: ImageFile[] = []
 
@@ -57,7 +60,7 @@ export const useImageStore = defineStore('imageStore', () => {
           typeof (error as { message?: string }).message === 'string' &&
           (error as { message?: string }).message?.includes('UNIQUE constraint failed')
         ) {
-          console.log(`Error: Image ${file.inputPath} already exists in database, skipping.`)
+          console.log(`Image ${file.inputPath} already exists, skipping.`)
         } else {
           console.error(`Failed to add image ${file.inputPath}:`, error)
         }
@@ -131,7 +134,6 @@ export const useImageStore = defineStore('imageStore', () => {
   }
 
   async function bulkUpdateProcessedImages(processedData: AxoData[]): Promise<void> {
-    // Create a map for quick lookup by image name
     const resultsMap = new Map<string, AxoData>()
     for (const result of processedData) {
       resultsMap.set(result.image_name, result)
@@ -142,16 +144,16 @@ export const useImageStore = defineStore('imageStore', () => {
         const result = resultsMap.get(imageInStore.name)!
         const formattedKeypoints = parseAndFormatKeypoints(result.keypoints)
 
-        // Update local state
+        // Update local state - everything goes directly on the image object
         imageInStore.processed = true
-        imageInStore.keypoints = formattedKeypoints // Use the formatted data
-        if (imageInStore.data) {
-          imageInStore.data.keypoints = formattedKeypoints
-        }
+        imageInStore.keypoints = formattedKeypoints
+        imageInStore.boundingBox = result.bounding_box
 
+        // Update database
         await window.api.updateImage(imageInStore.inputPath, {
           processed: true,
-          keypoints: result.keypoints
+          keypoints: formattedKeypoints,
+          boundingBox: result.bounding_box
         })
       }
     }
@@ -160,40 +162,24 @@ export const useImageStore = defineStore('imageStore', () => {
   async function updateImage(inputPath: string, updates: Partial<ImageFile>): Promise<void> {
     const imageInStore = imageList.value.find((img) => img.inputPath === inputPath)
     if (imageInStore) {
-      if ('keypoints' in updates && updates.keypoints) {
-        const keypoints = updates.keypoints as Keypoint[]
-        imageInStore.keypoints = keypoints
-
-        if (!imageInStore.data) {
-          imageInStore.data = {
-            image_name: imageInStore.name,
-            bounding_box: [],
-            keypoints: keypoints
-          }
-        } else {
-          imageInStore.data.keypoints = keypoints
-        }
-      }
-
-      // Update other fields
+      // Simply merge the updates into the image object
       Object.assign(imageInStore, updates)
 
-      // Prepare database updates
-      const dbUpdates: Record<string, unknown> = { ...updates }
-
       try {
-        await window.api.updateImage(inputPath, dbUpdates)
+        await window.api.updateImage(inputPath, updates)
       } catch (error) {
         console.error(`Failed to update image ${inputPath}:`, error)
       }
     }
   }
+
   async function loadExistingImages(): Promise<void> {
     try {
       const existingImages = await window.api.getDBImages()
       imageList.value = existingImages.map((img) => ({
         ...img,
-        keypoints: parseAndFormatKeypoints(img.keypoints)
+        keypoints: parseAndFormatKeypoints(img.keypoints),
+        boundingBox: img.boundingBox || []
       }))
     } catch (error) {
       console.error('Failed to load existing images:', error)

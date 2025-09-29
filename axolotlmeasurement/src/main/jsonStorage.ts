@@ -82,21 +82,17 @@ export class JsonImageStorage {
 
     const imageIndex = this.cache!.images.findIndex((img) => img.inputPath === inputPath)
     if (imageIndex === -1) {
-      return 0 // No image found to update
+      return 0
     }
 
-    // Apply updates, ensuring keypoints are normalized
-    if (updates.keypoints) {
-      updates.keypoints = this.normalizeKeypoints(updates.keypoints)
-    }
-
+    // Directly apply updates - no special keypoint handling needed
     this.cache!.images[imageIndex] = {
       ...this.cache!.images[imageIndex],
       ...updates
     }
 
     await this.saveDebounced()
-    return 1 // Number of images updated
+    return 1
   }
 
   /**
@@ -188,13 +184,10 @@ export class JsonImageStorage {
       await this.load()
     }
 
-    // Check for duplicates
     const exists = this.cache!.images.some((img) => img.inputPath === image.inputPath)
     if (exists) {
-      throw new Error(`UNIQUE constraint failed: Image ${image.inputPath} already exists`)
+      throw new Error(`Image ${image.inputPath} already exists`)
     }
-
-    image.keypoints = this.normalizeKeypoints(image.keypoints as Keypoint[])
 
     this.cache!.images.push(image)
     await this.saveDebounced()

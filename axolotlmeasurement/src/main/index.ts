@@ -2,7 +2,7 @@ import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { fileOptions, DeletionCriteria, ImageFile } from '../types'
+import { DeletionCriteria, ImageFile, AxoData, fileOptions } from '../types'
 import fetch from 'node-fetch'
 import fs from 'fs'
 import { JsonImageStorage } from './jsonStorage'
@@ -120,14 +120,14 @@ app.whenReady().then(async () => {
 
       const data = await response.json()
       console.log('Response from backend:', data)
-      return data.data
+      return data.data as AxoData
     } catch (error) {
       console.error('Error processing images:', error)
       return { error: 'Failed to process images' }
     }
   })
 
-  // Get all images from the database. Still have to think about best times to call this, to avoid data tweaks as much as possible.
+  // Get all images from the database.
   ipcMain.handle('db:get-all-images', async () => {
     const images = await storage.getAllImages()
     // The images are already in the correct format now!

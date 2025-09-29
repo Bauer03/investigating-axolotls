@@ -67,9 +67,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { fileOptions, ProcessSuccess, ProcessError } from '../../../types'
 import { useImageStore } from '../stores/imageStore'
-import { ImageFile } from '../../../types'
+import { fileOptions, ImageFile } from '../../../types'
 
 const imageStore = useImageStore()
 let filePaths: string[] | undefined
@@ -111,12 +110,11 @@ async function requestFileDialog(type: fileOptions): Promise<void> {
 
 // This function is only triggered on attempt at file upload
 async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
-  // prevents uploading duplicates
   const existingPaths = new Set(imagesToProcess.value.map((image) => image.inputPath))
   const newPaths = selectedPaths.filter((path) => !existingPaths.has(path))
 
   if (newPaths.length === 0) {
-    alert('All images are already uploaded! Ensure your images have unique file names.') // alert probably acceptable here
+    alert('All images are already uploaded!')
     return
   }
 
@@ -124,24 +122,20 @@ async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
 
   for (const path of newPaths) {
     const fileName = path.split(/[\\/]/).pop() || 'unknown_file'
-    const newImage = {
+    const newImage: ImageFile = {
       name: fileName,
       inputPath: path,
-      outputPath: '', // not fully certian how i'll use this but
+      outputPath: '',
       verified: false,
       processed: false,
-      data: {
-        image_name: fileName,
-        bounding_box: [],
-        keypoints: []
-      }
+      keypoints: [], // Start with empty array
+      boundingBox: [] // Start with empty array
     }
     newFiles.push(newImage)
   }
-  imageStore.addImages(newFiles) // adds images to image store (thus updating UI).
-  console.log(
-    `Added ${newFiles.length} new files. Skipped ${selectedPaths.length - newPaths.length} duplicates.`
-  )
+
+  imageStore.addImages(newFiles)
+  console.log(`Added ${newFiles.length} new files.`)
 }
 
 function clearInput(): void {
@@ -163,7 +157,7 @@ async function startProcessing(): Promise<void> {
   console.log(paths)
 
   try {
-    const res: ProcessSuccess | ProcessError = await window.api.fs.processImages(paths)
+    const res = await window.api.fs.processImages(paths)
     const timeTaken = (Date.now() - initTime) / 1000
     paths = []
 

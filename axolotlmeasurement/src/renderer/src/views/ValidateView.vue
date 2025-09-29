@@ -36,7 +36,11 @@
         <KeypointDisplay
           v-if="selectedImage"
           :image-src="selectedImage.inputPath"
-          :keypoints="selectedImage.keypoints"
+          :keypoints="
+            typeof selectedImage.keypoints === 'string'
+              ? JSON.parse(selectedImage.keypoints)
+              : selectedImage.keypoints
+          "
           class="selected-image validate-image"
           @click="openFullscreen(selectedImage)"
         />
@@ -77,6 +81,7 @@
 <script setup lang="ts">
 import { useImageStore } from '../stores/imageStore'
 import { computed, ComputedRef, onMounted, ref, Ref } from 'vue'
+import router from '@renderer/router'
 import { ImageFile, Keypoint } from 'src/types'
 import KeypointDisplay from '../components/KeypointDisplay.vue'
 const headertext: ComputedRef<string> = computed(() => {
@@ -117,12 +122,16 @@ function editKeypoints(image: ImageFile | null): void {
 
 async function confirmImage(image: ImageFile | null): Promise<void> {
   if (image) {
-    const keypointsToSave = image.data?.keypoints || []
     await imageStore.updateImage(image.inputPath, {
       verified: true,
-      data.keypoints = keypointsToSave
+      keypoints: image.keypoints // Just reference the keypoints directly
     })
-    imageStore.selectImage(imageStore.validationList[0].inputPath, 'validation')
+
+    if (imageStore.validationList.length > 0) {
+      imageStore.selectImage(imageStore.validationList[0].inputPath, 'validation')
+    } else {
+      router.push('gallery')
+    }
   }
 }
 
@@ -132,7 +141,8 @@ const editedKeypoints: Ref<Keypoint[]> = ref([])
 
 function openFullscreen(image: ImageFile): void {
   fullscreenImage.value = image
-  const keypoints = image.data?.keypoints
+  const keypoints =
+    typeof image.keypoints === 'string' ? JSON.parse(image.keypoints) : image.keypoints || []
   editedKeypoints.value = JSON.parse(JSON.stringify(keypoints))
 }
 

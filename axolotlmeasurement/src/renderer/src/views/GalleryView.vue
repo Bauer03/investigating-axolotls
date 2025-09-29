@@ -32,7 +32,7 @@
       <div class="flx col gp05 list-container">
         <div
           v-for="image in galleryImages"
-          :key="image.data?.image_name"
+          :key="image.name"
           :class="{ selected: selectedImage?.inputPath === image.inputPath }"
           class="glass-list-item p-1"
           @click="imageStore.selectImage(image.inputPath, 'gallery')"
@@ -47,7 +47,7 @@
         <KeypointDisplay
           v-if="selectedImage"
           :image-src="selectedImage.inputPath"
-          :keypoints="selectedImage.data?.keypoints"
+          :keypoints="selectedImage.keypoints"
           class="selected-image"
           @click="openFullscreen(selectedImage)"
         />
@@ -143,8 +143,8 @@ const downloadAllImages = async (): Promise<void> => {
           ctx.drawImage(img, 0, 0)
 
           // Draw keypoints
-          if (image.data?.keypoints) {
-            image.data.keypoints.forEach((kp) => {
+          if (image.keypoints) {
+            image.keypoints.forEach((kp) => {
               ctx.beginPath()
               ctx.arc(kp.x, kp.y, 10, 0, 2 * Math.PI)
               ctx.fillStyle = 'hsla(160, 100%, 37%, 0.75)'
@@ -198,12 +198,11 @@ const downloadAllKeypointData = async (): Promise<void> => {
   alert('Download All DATA functionality to be implemented!')
   isDropdownOpen.value = false
 }
-const downloadImage = async (image: ImageFile | null): Promise<void> => {
+async function downloadImage(image: ImageFile | null): Promise<void> {
   if (!image) return
 
   try {
     const base64Data = await window.api.fs.readFile(image.inputPath)
-
     const imageUrl = `data:image/png;base64,${base64Data}`
 
     const img = new Image()
@@ -216,10 +215,9 @@ const downloadImage = async (image: ImageFile | null): Promise<void> => {
       canvas.height = img.naturalHeight
       ctx.drawImage(img, 0, 0)
 
-      // Draw keypoints
-      // Important note: I'm not adding the text next to keypoints on download. If that shoudl be the case, let me know.
-      if (image.data?.keypoints) {
-        image.data.keypoints.forEach((kp) => {
+      // Draw keypoints - simplified access
+      if (image.keypoints && image.keypoints.length > 0) {
+        image.keypoints.forEach((kp) => {
           ctx.beginPath()
           ctx.arc(kp.x, kp.y, 10, 0, 2 * Math.PI)
           ctx.fillStyle = 'hsla(160, 100%, 37%, 0.75)'
@@ -230,7 +228,6 @@ const downloadImage = async (image: ImageFile | null): Promise<void> => {
         })
       }
 
-      // Create a new data URL from the canvas and trigger the download
       const dataUrl = canvas.toDataURL('image/png')
       const link = document.createElement('a')
       link.href = dataUrl
@@ -241,8 +238,8 @@ const downloadImage = async (image: ImageFile | null): Promise<void> => {
     }
     img.src = imageUrl
   } catch (error) {
-    console.error(`Error preparing image for download: ${error}`)
-    alert('Failed to download image. See console for details.')
+    console.error(`Error downloading image: ${error}`)
+    alert('Failed to download image.')
   }
 }
 const copyData = (image: ImageFile | null): void => {
@@ -256,10 +253,7 @@ const editedKeypoints: Ref<Keypoint[]> = ref([])
 
 function openFullscreen(image: ImageFile): void {
   fullscreenImage.value = image
-  const keypoints =
-    typeof image.data?.keypoints === 'string'
-      ? JSON.parse(image.data.keypoints)
-      : image.data?.keypoints || []
+  const keypoints = image.keypoints
   editedKeypoints.value = JSON.parse(JSON.stringify(keypoints))
 }
 
@@ -271,11 +265,7 @@ function closeFullscreen(): void {
 async function saveAndCloseFullscreen(): Promise<void> {
   if (fullscreenImage.value) {
     await imageStore.updateImage(fullscreenImage.value.inputPath, {
-      data: {
-        image_name: fullscreenImage.value.data?.image_name ?? '',
-        keypoints: editedKeypoints.value,
-        bounding_box: fullscreenImage.value.data?.bounding_box ?? []
-      }
+      keypoints: editedKeypoints.value
     })
   }
   closeFullscreen()
