@@ -91,3 +91,12 @@ declare global {
     api: AxolotlAPI
   }
 }
+
+export interface ImageDatabase {
+  version: number // For migrations
+  images: ImageFile[]
+  metadata: {
+    lastModified: string
+    totalImages: number
+  }
+}

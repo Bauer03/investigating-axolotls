@@ -149,11 +149,9 @@ export const useImageStore = defineStore('imageStore', () => {
           imageInStore.data.keypoints = formattedKeypoints
         }
 
-        // Persist change to the database (expects the original string format, this is where i wish electron store were easier to deal with using ts)
         await window.api.updateImage(imageInStore.inputPath, {
           processed: true,
-          // The 'result.keypoints' is already in the stringified format the DB needs
-          keypoints: JSON.stringify(result.keypoints)
+          keypoints: result.keypoints
         })
       }
     }
@@ -182,11 +180,6 @@ export const useImageStore = defineStore('imageStore', () => {
 
       // Prepare database updates
       const dbUpdates: Record<string, unknown> = { ...updates }
-      if (dbUpdates.keypoints) {
-        // Convert keypoints back to the raw format for database storage
-        const rawKeypoints = [(dbUpdates.keypoints as Keypoint[]).map((kp) => [kp.x, kp.y])]
-        dbUpdates.keypoints = JSON.stringify(rawKeypoints)
-      }
 
       try {
         await window.api.updateImage(inputPath, dbUpdates)

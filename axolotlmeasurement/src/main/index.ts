@@ -2,24 +2,11 @@ import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { fileOptions, DeletionCriteria, ImageUpdateData } from '../types'
+import { fileOptions, DeletionCriteria, ImageFile } from '../types'
 import fetch from 'node-fetch'
-import Database from 'better-sqlite3'
 import fs from 'fs'
-export const db = new Database(join(app.getPath('userData'), 'axolotl-measurements.db'))
-
-// Create table if it doesn't exist, this runs every time app starts, but only triggers if no db exists.
-// Note: Parsing arrays/lists into strings to store in here.
-db.exec(`
-  CREATE TABLE IF NOT EXISTS images (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    inputPath TEXT UNIQUE,
-    processed BOOLEAN,
-    verified BOOLEAN,
-    keypoints TEXT
-  )
-`)
+import { JsonImageStorage } from './jsonStorage'
+const storage = new JsonImageStorage()
 
 function createWindow(): void {
   // Create the browser window.
@@ -56,9 +43,10 @@ function createWindow(): void {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
+  await storage.init()
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
@@ -140,111 +128,54 @@ app.whenReady().then(() => {
   })
 
   // Get all images from the database. Still have to think about best times to call this, to avoid data tweaks as much as possible.
-  ipcMain.handle('db:get-all-images', () => {
-    return db
-      .prepare('SELECT * FROM images')
-      .all()
-      .map((img) => ({
-        ...img,
-        processed: Boolean(img.processed),
-        verified: Boolean(img.verified),
-        data: { keypoints: JSON.parse(img.keypoints || '[]') }
-      }))
+  ipcMain.handle('db:get-all-images', async () => {
+    const images = await storage.getAllImages()
+    // The images are already in the correct format now!
+    return images
   })
 
   // Add image to database
-  ipcMain.handle('db:add-image', (_: unknown, image) => {
-    const stmt = db.prepare(
-      'INSERT INTO images (name, inputPath, processed, verified, keypoints) VALUES (?, ?, ?, ?, ?)'
-    )
-    // Convert boolean 'false' to integer '0' for SQLite
-    const result = stmt.run(image.name, image.inputPath, 0, 0, '[]') // <--- Corrected line
-    console.log(`[DATABASE] Added image: ${image.name}`, result)
-    return result
+  ipcMain.handle('db:add-image', async (_: unknown, image) => {
+    try {
+      await storage.addImage(image)
+      console.log(`[Storage] Added image: ${image.name}`)
+      return { success: true }
+    } catch (error) {
+      console.error(`[Storage] Error adding image:`, error)
+      throw error
+    }
   })
 
   // Singe image deletion
-  ipcMain.handle('db:delete-image', (_: unknown, inputPath: string) => {
-    const stmt = db.prepare('DELETE FROM images WHERE inputPath = ?')
-    const result = stmt.run(inputPath)
-    if (result.changes > 0) {
-      console.log(`[DATABASE] Deleted image: ${inputPath}`) // DEBUG
+  ipcMain.handle('db:delete-image', async (_: unknown, inputPath: string) => {
+    const deleted = await storage.deleteImage(inputPath)
+    if (deleted) {
+      console.log(`[Storage] Deleted image: ${inputPath}`)
     }
-    return result.changes > 0
+    return deleted
   })
 
   // got help from mr gpt here
-  ipcMain.handle('db:delete-images-where', (_: unknown, criteria: DeletionCriteria) => {
-    let whereClause = 'WHERE 1 = 1' // Start with a clause that is always true
-    const params: (number | string)[] = []
-
-    if (criteria.processed !== undefined) {
-      whereClause += ' AND processed = ?'
-      params.push(criteria.processed ? 1 : 0)
-    }
-    if (criteria.verified !== undefined) {
-      whereClause += ' AND verified = ?'
-      params.push(criteria.verified ? 1 : 0)
-    }
-
-    // To prevent accidentally deleting everything if no criteria are passed
-    if (params.length === 0) {
-      console.error('Attempted to delete without any criteria. Aborting.')
-      return 0
-    }
-
-    const query = `DELETE FROM images ${whereClause}`
-    const stmt = db.prepare(query)
-    const result = stmt.run(...params)
-    console.log(
-      `[DATABASE] Bulk delete finished. Criteria:`,
-      criteria,
-      `Deleted rows: ${result.changes}`
-    ) // DEBUG
-    return result.changes
+  ipcMain.handle('db:delete-images-where', async (_: unknown, criteria: DeletionCriteria) => {
+    const deletedCount = await storage.deleteImagesWhere(criteria)
+    console.log(`[Storage] Bulk delete finished. Criteria:`, criteria, `Deleted: ${deletedCount}`)
+    return deletedCount
   })
 
-  ipcMain.handle('db:update-image', (_: unknown, inputPath: string, data: ImageUpdateData) => {
-    // Convert boolean values to integers before building the query
-    const convertedData: Record<string, unknown> = { ...data }
-    if ('processed' in convertedData && typeof convertedData.processed === 'boolean') {
-      convertedData.processed = convertedData.processed ? 1 : 0
+  ipcMain.handle(
+    'db:update-image',
+    async (_: unknown, inputPath: string, data: Partial<ImageFile>) => {
+      const updateCount = await storage.updateImage(inputPath, data)
+      console.log(`[Storage] Updated image: ${inputPath} with`, data)
+      return updateCount
     }
-    if ('verified' in convertedData && typeof convertedData.verified === 'boolean') {
-      convertedData.verified = convertedData.verified ? 1 : 0
-    }
+  )
 
-    const setClauses = Object.keys(convertedData)
-      .map((key) => `${key} = ?`)
-      .join(', ')
-    const params = Object.values(convertedData)
-
-    if (params.length === 0) {
-      return 0 // Nothing to update
-    }
-
-    const query = `UPDATE images SET ${setClauses} WHERE inputPath = ?`
-    const stmt = db.prepare(query)
-    const result = stmt.run(...params, inputPath)
-    console.log(`[DATABASE] Updated image: ${inputPath} with`, data) // DEBUG
-    return result.changes
+  // Prints contents of db
+  ipcMain.handle('debug:dump-db', async () => {
+    console.log('[DEBUG] Dumping database contents...')
+    await storage.dumpDatabase()
   })
-
-  // Prints contents of sqlite3 database
-  ipcMain.handle('debug:dump-db', () => {
-    console.log('[DEBUG] Dumping all database contents...')
-    try {
-      const rows = db.prepare('SELECT * FROM images').all()
-      if (rows.length > 0) {
-        console.table(rows) // console.table is great for arrays of objects
-      } else {
-        console.log('[DEBUG] Database table "images" is empty.')
-      }
-    } catch (error) {
-      console.error('[DEBUG] Failed to dump database:', error)
-    }
-  })
-
   createWindow()
 
   app.on('activate', function () {
@@ -261,6 +192,10 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+app.on('before-quit', async () => {
+  await storage.flush()
 })
 
 // In this file you can include the rest of your app's specific main process
@@ -287,10 +222,10 @@ async function handleUploadRequest(win: BrowserWindow, type: fileOptions): Promi
       console.log('Picked: ' + result.filePaths)
       return result.filePaths
     } else {
-      let filePaths: string[] = []
       try {
-        filePaths = await requestFolderContents(result.filePaths[0]) // assuming this is the way to get a folder's path lol
-        return filePaths
+        const files = await fs.promises.readdir(result.filePaths[0])
+        // console.log('debug for folder upload: ' + files)
+        return files.map((file) => join(result.filePaths[0], file))
       } catch (error) {
         console.error('Error getting file paths from folder: ' + error)
         return []
@@ -300,32 +235,6 @@ async function handleUploadRequest(win: BrowserWindow, type: fileOptions): Promi
     console.log('User canceled file dialog.')
   }
   return []
-}
-
-/**
- * Passes in folder path to python server, returns file paths in that folder if they exist.
- */
-async function requestFolderContents(folderPath: string): Promise<string[]> {
-  try {
-    const response = await fetch('http://localhost:8001/get-folder-contents', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ path: folderPath })
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`)
-    }
-
-    const filePaths: string[] = await response.json()
-    console.log('Backend returned files: ', filePaths)
-    return filePaths
-  } catch (error) {
-    console.error('Error getting folder contents: ', error)
-    throw error
-  }
 }
 function basename(name: string): string {
   return name.replace(/^.*[\\/]/, '')
