@@ -162,13 +162,19 @@ export const useImageStore = defineStore('imageStore', () => {
   async function updateImage(inputPath: string, updates: Partial<ImageFile>): Promise<void> {
     const imageInStore = imageList.value.find((img) => img.inputPath === inputPath)
     if (imageInStore) {
-      // Simply merge the updates into the image object
+      // Simply merge the updates into the image object for local state
       Object.assign(imageInStore, updates)
 
       try {
-        await window.api.updateImage(inputPath, updates)
+        // Create a plain object copy to send through IPC
+        // Removes Vue's reactive proxies that can't be cloned, otherwise get errors
+        const plainUpdates = JSON.parse(JSON.stringify(updates))
+
+        await window.api.updateImage(inputPath, plainUpdates)
       } catch (error) {
         console.error(`Failed to update image ${inputPath}:`, error)
+        // could revert the local state change if the database update failed?
+        throw error
       }
     }
   }
