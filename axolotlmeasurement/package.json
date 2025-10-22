@@ -24,6 +24,26 @@
     "dist": "electron-builder"
   },
   "build": {
+    "appId": "T.Work.InvestigatingAxolotls",
+    "productName": "InvestigatingAxolotls",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ]
+    },
+    "mac": {
+      "category": "your.app.category.type"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    },
     "files": [
       "**/*",
       "!dist/**/*"
