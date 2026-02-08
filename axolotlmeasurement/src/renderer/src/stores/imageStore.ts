@@ -6,6 +6,8 @@ export const useImageStore = defineStore('imageStore', () => {
   const imageList = ref<ImageFile[]>([])
   const selectedValidationImagePath = ref<string | null>(null)
   const selectedGalleryImagePath = ref<string | null>(null)
+  const selectedModel = ref<string>('')
+  const availableModels = ref<string[]>([])
   // const KEYPOINT_NAMES: Keypoint['name'][] = ['Snout', 'Neck', 'Mid-body', 'Tail Base']
 
   /**
@@ -45,6 +47,18 @@ export const useImageStore = defineStore('imageStore', () => {
       return []
     }
   }
+  async function loadModels(): Promise<void> {
+    try {
+      availableModels.value = await window.api.models.listModels()
+      if (availableModels.value.length > 0 && !selectedModel.value) {
+        selectedModel.value = availableModels.value[0]
+      }
+    } catch (error) {
+      console.error('Failed to load models:', error)
+      availableModels.value = []
+    }
+  }
+
   async function addImages(files: ImageFile[]): Promise<void> {
     const successfullyAdded: ImageFile[] = []
 
@@ -148,12 +162,14 @@ export const useImageStore = defineStore('imageStore', () => {
         imageInStore.processed = true
         imageInStore.keypoints = formattedKeypoints
         imageInStore.boundingBox = result.bounding_box
+        imageInStore.modelName = selectedModel.value
 
         // Update database
         await window.api.updateImage(imageInStore.inputPath, {
           processed: true,
           keypoints: formattedKeypoints,
-          boundingBox: result.bounding_box
+          boundingBox: result.bounding_box,
+          modelName: selectedModel.value
         })
       }
     }
@@ -185,7 +201,8 @@ export const useImageStore = defineStore('imageStore', () => {
       imageList.value = existingImages.map((img) => ({
         ...img,
         keypoints: parseAndFormatKeypoints(img.keypoints),
-        boundingBox: img.boundingBox || []
+        boundingBox: img.boundingBox || [],
+        modelName: img.modelName || ''
       }))
     } catch (error) {
       console.error('Failed to load existing images:', error)
@@ -213,6 +230,9 @@ export const useImageStore = defineStore('imageStore', () => {
     unselectImage,
     selectedGalleryImage,
     galleryList,
-    validationList
+    validationList,
+    selectedModel,
+    availableModels,
+    loadModels
   }
 })

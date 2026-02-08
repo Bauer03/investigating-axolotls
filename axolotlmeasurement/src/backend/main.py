@@ -11,6 +11,7 @@ app = FastAPI()
 
 class ImagePaths(BaseModel):
     paths: List[str]
+    model: str = "best.pt"
 
 class FolderPath(BaseModel):
     path: str
@@ -33,17 +34,35 @@ app.add_middleware(
 def read_root():
     return {"message": "Welcome to the Axolotl Measurement Backend!"}
 
+@app.get("/models")
+def list_models():
+    models_dir = os.path.join(os.path.abspath("."), "models")
+    if not os.path.isdir(models_dir):
+        os.makedirs(models_dir, exist_ok=True)
+        return {"models": []}
+
+    model_files = [
+        f for f in os.listdir(models_dir)
+        if f.endswith('.pt') and os.path.isfile(os.path.join(models_dir, f))
+    ]
+    return {"models": sorted(model_files)}
+
 @app.post("/process-images")
 def process_images(image_paths: ImagePaths):
     if not image_paths.paths:
         return {"error": "No image paths provided"}
 
+    # Validate model name to prevent path traversal
+    if '..' in image_paths.model or '/' in image_paths.model or '\\' in image_paths.model:
+        return {"error": "Invalid model name"}
+
     python_executable = sys.executable
+    model_arg = f"models/{image_paths.model}"
 
     try:
-        # Pass the list of image paths directly to the script
+        # Pass the model and list of image paths to the script
         result = subprocess.run(
-            [python_executable, "kp_est_01_results.py", *image_paths.paths],
+            [python_executable, "kp_est_01_results.py", "--model", model_arg, *image_paths.paths],
             capture_output=True,
             text=True,
             check=True

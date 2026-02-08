@@ -5,6 +5,7 @@ import icon from '../../resources/icon.png?asset'
 import { DeletionCriteria, ImageFile, AxoData, fileOptions } from '../types'
 import fetch from 'node-fetch'
 import fs from 'fs'
+import { crc32 } from 'zlib'
 import { JsonImageStorage } from './jsonStorage'
 const storage = new JsonImageStorage()
 
@@ -73,9 +74,33 @@ app.whenReady().then(async () => {
     return buffer.toString('base64')
   })
 
+  ipcMain.handle('models:list', async () => {
+    try {
+      const response = await fetch('http://localhost:8001/models')
+      const data = (await response.json()) as { models: string[] }
+      return data.models
+    } catch (error) {
+      console.error('Error fetching models:', error)
+      return []
+    }
+  })
+
+  ipcMain.handle(
+    'fs:embed-png-metadata',
+    async (_: unknown, pngBase64: string, metadata: Record<string, string>) => {
+      const base64Data = pngBase64.replace(/^data:image\/png;base64,/, '')
+      const pngBuffer = Buffer.from(base64Data, 'base64')
+      const resultBuffer = embedPngTextChunks(pngBuffer, metadata)
+      return resultBuffer.toString('base64')
+    }
+  )
+
   ipcMain.handle(
     'download-all-images',
-    async (_event, filesToSave: { name: string; data: string }[]) => {
+    async (
+      _event,
+      filesToSave: { name: string; data: string; metadata?: Record<string, string> }[]
+    ) => {
       // user selects file directory for mass save. May make folder auto in future?
       const { canceled, filePath } = await dialog.showSaveDialog({
         title: 'Save Processed Images',
@@ -92,7 +117,12 @@ app.whenReady().then(async () => {
       try {
         const savePromises = filesToSave.map((file) => {
           const base64Data = file.data.replace(/^data:image\/png;base64,/, '')
-          const buffer = Buffer.from(base64Data, 'base64')
+          let buffer: Buffer = Buffer.from(base64Data, 'base64')
+
+          if (file.metadata) {
+            buffer = embedPngTextChunks(buffer, file.metadata)
+          }
+
           const fullPath = join(saveDirectory, basename(file.name))
           return fs.promises.writeFile(fullPath, buffer)
         })
@@ -108,14 +138,18 @@ app.whenReady().then(async () => {
     }
   )
 
-  ipcMain.handle('process-images', async (_: unknown, paths: string[]) => {
+  ipcMain.handle('process-images', async (_: unknown, paths: string[], model?: string) => {
     try {
+      const body: { paths: string[]; model?: string } = { paths }
+      if (model) {
+        body.model = model
+      }
       const response = await fetch('http://localhost:8001/process-images', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ paths: paths })
+        body: JSON.stringify(body)
       })
 
       const data = await response.json()
@@ -238,4 +272,32 @@ async function handleUploadRequest(win: BrowserWindow, type: fileOptions): Promi
 }
 function basename(name: string): string {
   return name.replace(/^.*[\\/]/, '')
+}
+
+function embedPngTextChunks(png: Buffer, metadata: Record<string, string>): Buffer {
+  // PNG signature is 8 bytes, then IHDR chunk is always first
+  const SIGNATURE_LENGTH = 8
+  const ihdrLength = png.readUInt32BE(SIGNATURE_LENGTH)
+  // IHDR total = 4 (length) + 4 (type) + ihdrLength (data) + 4 (crc)
+  const insertOffset = SIGNATURE_LENGTH + 4 + 4 + ihdrLength + 4
+
+  const chunks: Buffer[] = []
+  for (const [key, value] of Object.entries(metadata)) {
+    const keyBuf = Buffer.from(key, 'latin1')
+    const valBuf = Buffer.from(value, 'latin1')
+    const data = Buffer.concat([keyBuf, Buffer.from([0]), valBuf])
+    const type = Buffer.from('tEXt', 'ascii')
+
+    const lengthBuf = Buffer.alloc(4)
+    lengthBuf.writeUInt32BE(data.length, 0)
+
+    const crcValue = crc32(Buffer.concat([type, data]))
+    const crcBuf = Buffer.alloc(4)
+    crcBuf.writeUInt32BE(crcValue, 0)
+
+    chunks.push(Buffer.concat([lengthBuf, type, data, crcBuf]))
+  }
+
+  const textChunkData = Buffer.concat(chunks)
+  return Buffer.concat([png.subarray(0, insertOffset), textChunkData, png.subarray(insertOffset)])
 }

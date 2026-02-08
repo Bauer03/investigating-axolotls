@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import sys
 import json
+import argparse
 
 # Get correct path for bundled resources
 # (important for built app working on anyone's OS other than mine lol)
@@ -17,19 +18,17 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-# --- Path Refactoring ---
-model_path = resource_path("best.pt")
+# --- Parse arguments ---
+parser = argparse.ArgumentParser()
+parser.add_argument('--model', default='models/best.pt', help='Path to .pt model file')
+parser.add_argument('images', nargs='+', help='Image file paths')
+args = parser.parse_args()
 
 # --- Initialize YOLO model ---
+model_path = resource_path(args.model)
 model = YOLO(model_path)
 
-# --- Handling Input/Output ---
-if len(sys.argv) < 2:
-    # Print usage instructions to stderr
-    print("Usage: python kp_est_01_results.py <image_path_1> <image_path_2> ...", file=sys.stderr)
-    sys.exit(1)
-
-image_files = [Path(p) for p in sys.argv[1:]]
+image_files = [Path(p) for p in args.images]
 
 # printing to stderr so I don't accidentally read in my program, because of how this file is set up.
 print(f"Found {len(image_files)} images to process...", file=sys.stderr)

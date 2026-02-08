@@ -5,7 +5,7 @@ Before getting started:
 Ensure you have python installed on your computer.
 To check, run python --version (or python3 --version). If you have either installed, you'll get the version number.
 
-Next, you need the model. It should be named best.pt. Put it into src/backend.
+Next, you need a model. Place your .pt model file(s) into `src/backend/models/`. You can have multiple models — the app lets you switch between them.
 Now, we can run the app locally.
 
 ## Virtual Environment setup (allows local installation of python packages)
