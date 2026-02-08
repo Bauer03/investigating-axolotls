@@ -9,6 +9,87 @@ import { crc32 } from 'zlib'
 import { JsonImageStorage } from './jsonStorage'
 const storage = new JsonImageStorage()
 
+let backendProcess: ChildProcess | null = null
+
+function startBackend(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const serverPath = join(
+      process.resourcesPath,
+      'resources',
+      'axolotl-server',
+      'axolotl-server.exe'
+    )
+
+    console.log('[Backend] Starting server from:', serverPath)
+
+    backendProcess = spawn(serverPath, [], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      windowsHide: true
+    })
+
+    let resolved = false
+
+    backendProcess.stdout?.on('data', (data: Buffer) => {
+      const output = data.toString()
+      console.log('[Backend stdout]', output)
+      if (
+        !resolved &&
+        (output.includes('Uvicorn running') || output.includes('Application startup complete'))
+      ) {
+        resolved = true
+        resolve()
+      }
+    })
+
+    backendProcess.stderr?.on('data', (data: Buffer) => {
+      const output = data.toString()
+      console.log('[Backend stderr]', output)
+      if (
+        !resolved &&
+        (output.includes('Uvicorn running') || output.includes('Application startup complete'))
+      ) {
+        resolved = true
+        resolve()
+      }
+    })
+
+    backendProcess.on('error', (err) => {
+      console.error('[Backend] Failed to start:', err)
+      if (!resolved) {
+        resolved = true
+        reject(err)
+      }
+    })
+
+    backendProcess.on('exit', (code) => {
+      console.log('[Backend] Process exited with code:', code)
+      backendProcess = null
+    })
+
+    // Timeout: if server doesn't signal ready within 30 seconds, resolve anyway
+    // so the app can still show UI
+    setTimeout(() => {
+      if (!resolved) {
+        resolved = true
+        console.log('[Backend] Startup timeout reached, continuing anyway')
+        resolve()
+      }
+    }, 30000)
+  })
+}
+
+function stopBackend(): void {
+  if (backendProcess) {
+    console.log('[Backend] Stopping server...')
+    if (process.platform === 'win32' && backendProcess.pid) {
+      spawn('taskkill', ['/pid', String(backendProcess.pid), '/f', '/t'])
+    } else {
+      backendProcess.kill()
+    }
+    backendProcess = null
+  }
+}
+
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -46,8 +127,18 @@ function createWindow(): void {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(async () => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  electronApp.setAppUserModelId('T.Work.InvestigatingAxolotls')
   await storage.init()
+
+  // Start the Python backend in production mode
+  if (!is.dev) {
+    try {
+      await startBackend()
+      console.log('[Backend] Server is ready')
+    } catch (err) {
+      console.error('[Backend] Failed to start server:', err)
+    }
+  }
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
@@ -229,6 +320,7 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', async () => {
+  stopBackend()
   await storage.flush()
 })
 
