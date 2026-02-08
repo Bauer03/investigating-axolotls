@@ -53,6 +53,10 @@
         />
       </div>
 
+      <div v-if="selectedImage?.modelName" class="model-info txt-col">
+        Model: {{ selectedImage.modelName }}
+      </div>
+
       <div class="glass-panel pd1 flx gp1 jc-end">
         <button class="discreet-btn flx gp05 al-c" @click="copyData(selectedImage)">
           <span class="material-icons-outlined">content_copy</span>
@@ -117,7 +121,7 @@ const downloadAllImages = async (): Promise<void> => {
   isDownloadingAll.value = true
   console.log('Starting batch download process...')
 
-  const filesToSave: { name: string; data: string }[] = []
+  const filesToSave: { name: string; data: string; metadata?: Record<string, string> }[] = []
 
   // Use a canvas that is not attached to the DOM
   const canvas = document.createElement('canvas')
@@ -154,16 +158,34 @@ const downloadAllImages = async (): Promise<void> => {
               ctx.stroke()
             })
           }
+
+          // Draw model name at bottom-left
+          if (image.modelName) {
+            const fontSize = Math.max(12, Math.floor(img.naturalHeight / 50))
+            ctx.font = `${fontSize}px sans-serif`
+            ctx.lineWidth = 3
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)'
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
+            const text = `Model: ${image.modelName}`
+            const padding = 10
+            const textY = img.naturalHeight - padding
+            ctx.strokeText(text, padding, textY)
+            ctx.fillText(text, padding, textY)
+          }
+
           resolve(canvas.toDataURL('image/png'))
         }
         img.onerror = reject
         img.src = imageUrl
       })
 
-      filesToSave.push({ name: `processed_${image.name}.png`, data: dataUrl })
+      filesToSave.push({
+        name: `processed_${image.name}.png`,
+        data: dataUrl,
+        metadata: image.modelName ? { Model: image.modelName } : undefined
+      })
     } catch (error) {
       console.error(`Failed to process image ${image.name}:`, error)
-      // Optionally, you can decide to stop or continue on error
     }
   }
 
@@ -205,38 +227,68 @@ async function downloadImage(image: ImageFile | null): Promise<void> {
     const base64Data = await window.api.fs.readFile(image.inputPath)
     const imageUrl = `data:image/png;base64,${base64Data}`
 
-    const img = new Image()
-    img.onload = () => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          reject(new Error('Could not create canvas context'))
+          return
+        }
 
-      canvas.width = img.naturalWidth
-      canvas.height = img.naturalHeight
-      ctx.drawImage(img, 0, 0)
+        canvas.width = img.naturalWidth
+        canvas.height = img.naturalHeight
+        ctx.drawImage(img, 0, 0)
 
-      // Draw keypoints - simplified access
-      if (image.keypoints && image.keypoints.length > 0) {
-        image.keypoints.forEach((kp) => {
-          ctx.beginPath()
-          ctx.arc(kp.x, kp.y, 10, 0, 2 * Math.PI)
-          ctx.fillStyle = 'hsla(160, 100%, 37%, 0.75)'
-          ctx.fill()
-          ctx.strokeStyle = 'white'
-          ctx.lineWidth = 2
-          ctx.stroke()
-        })
+        // Draw keypoints
+        if (image.keypoints && image.keypoints.length > 0) {
+          image.keypoints.forEach((kp) => {
+            ctx.beginPath()
+            ctx.arc(kp.x, kp.y, 10, 0, 2 * Math.PI)
+            ctx.fillStyle = 'hsla(160, 100%, 37%, 0.75)'
+            ctx.fill()
+            ctx.strokeStyle = 'white'
+            ctx.lineWidth = 2
+            ctx.stroke()
+          })
+        }
+
+        // Draw model name at bottom-left
+        if (image.modelName) {
+          const fontSize = Math.max(12, Math.floor(img.naturalHeight / 50))
+          ctx.font = `${fontSize}px sans-serif`
+          ctx.lineWidth = 3
+          ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)'
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
+          const text = `Model: ${image.modelName}`
+          const padding = 10
+          const textY = img.naturalHeight - padding
+          ctx.strokeText(text, padding, textY)
+          ctx.fillText(text, padding, textY)
+        }
+
+        resolve(canvas.toDataURL('image/png'))
       }
+      img.onerror = reject
+      img.src = imageUrl
+    })
 
-      const dataUrl = canvas.toDataURL('image/png')
-      const link = document.createElement('a')
-      link.href = dataUrl
-      link.download = `processed_${image.name}.png`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+    // Embed model metadata into PNG
+    let finalDataUrl = dataUrl
+    if (image.modelName) {
+      const enrichedBase64 = await window.api.fs.embedPngMetadata(dataUrl, {
+        Model: image.modelName
+      })
+      finalDataUrl = `data:image/png;base64,${enrichedBase64}`
     }
-    img.src = imageUrl
+
+    const link = document.createElement('a')
+    link.href = finalDataUrl
+    link.download = `processed_${image.name}.png`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   } catch (error) {
     console.error(`Error downloading image: ${error}`)
     alert('Failed to download image.')
@@ -362,6 +414,12 @@ onMounted(() => {
   padding: 0.5rem;
   border-radius: var(--br);
 }
+.model-info {
+  font-size: var(--fs-sm);
+  opacity: 0.8;
+  padding: 0 0.25rem;
+}
+
 .glass-preview {
   align-self: flex-start;
   flex-shrink: 0;

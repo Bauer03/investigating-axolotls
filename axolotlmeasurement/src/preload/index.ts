@@ -42,9 +42,12 @@ const api: AxolotlAPI = {
       }
     },
 
-    processImages: async (paths: string[]): Promise<ProcessSuccess | ProcessError> => {
+    processImages: async (
+      paths: string[],
+      model?: string
+    ): Promise<ProcessSuccess | ProcessError> => {
       try {
-        const result: AxoData[] = await ipcRenderer.invoke('process-images', paths)
+        const result: AxoData[] = await ipcRenderer.invoke('process-images', paths, model)
         return { message: 'Images processed successfully', data: result } as ProcessSuccess
       } catch (error) {
         return {
@@ -52,11 +55,18 @@ const api: AxolotlAPI = {
           error: error instanceof Error ? error.message : String(error)
         } as ProcessError
       }
-    }
+    },
+
+    embedPngMetadata: (pngBase64: string, metadata: Record<string, string>): Promise<string> =>
+      ipcRenderer.invoke('fs:embed-png-metadata', pngBase64, metadata)
+  },
+
+  models: {
+    listModels: (): Promise<string[]> => ipcRenderer.invoke('models:list')
   },
 
   downloadAllImages: (
-    files: { name: string; data: string }[]
+    files: { name: string; data: string; metadata?: Record<string, string> }[]
   ): Promise<{ success: boolean; message: string }> =>
     ipcRenderer.invoke('download-all-images', files)
 }

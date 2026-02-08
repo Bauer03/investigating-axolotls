@@ -5,6 +5,24 @@
     </div>
     <div class="flx col gp1">
       <span class="txt-c">Upload images to get started.</span>
+      <div class="flx al-c gp1 jc-c">
+        <label for="model-select-welcome" class="txt-col">Model:</label>
+        <select id="model-select-welcome" v-model="imageStore.selectedModel" class="model-select">
+          <option v-if="imageStore.availableModels.length === 0" value="" disabled>
+            No models found
+          </option>
+          <option v-for="model in imageStore.availableModels" :key="model" :value="model">
+            {{ model }}
+          </option>
+        </select>
+        <button
+          class="discreet-btn flx al-c"
+          title="Refresh model list"
+          @click="imageStore.loadModels()"
+        >
+          <span class="material-icons-outlined icon">refresh</span>
+        </button>
+      </div>
       <div class="draganddrop glass-panel flx col al-c gp1 pd2">
         <span>Drag and drop images/folders here (WIP)</span>
         <span>or</span>
@@ -37,6 +55,31 @@
       </div>
     </div>
 
+    <div class="flx al-c gp1">
+      <label for="model-select" class="txt-col">Model:</label>
+      <select
+        id="model-select"
+        v-model="imageStore.selectedModel"
+        class="model-select"
+        :disabled="isLoading"
+      >
+        <option v-if="imageStore.availableModels.length === 0" value="" disabled>
+          No models found
+        </option>
+        <option v-for="model in imageStore.availableModels" :key="model" :value="model">
+          {{ model }}
+        </option>
+      </select>
+      <button
+        class="discreet-btn flx al-c"
+        title="Refresh model list"
+        :disabled="isLoading"
+        @click="imageStore.loadModels()"
+      >
+        <span class="material-icons-outlined icon">refresh</span>
+      </button>
+    </div>
+
     <div v-if="isLoading === true" class="flx pd4 jc-c">
       <span class="material-symbols-outlined loading icon">progress_activity</span>
     </div>
@@ -65,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useImageStore } from '../stores/imageStore'
 import { fileOptions, ImageFile } from '../../../types'
@@ -74,6 +117,10 @@ const imageStore = useImageStore()
 let filePaths: string[] | undefined
 const router = useRouter()
 const isLoading = ref<boolean>(false)
+
+onMounted(async () => {
+  await imageStore.loadModels()
+})
 const successfulFiles = ref<ImageFile[]>([])
 const failedFileCount = ref<number>(0)
 const prepText = computed(() => {
@@ -129,7 +176,8 @@ async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
       verified: false,
       processed: false,
       keypoints: [], // Start with empty array
-      boundingBox: [] // Start with empty array
+      boundingBox: [], // Start with empty array
+      modelName: ''
     }
     newFiles.push(newImage)
   }
@@ -150,6 +198,11 @@ async function removeFile(path: string): Promise<void> {
 }
 
 async function startProcessing(): Promise<void> {
+  if (!imageStore.selectedModel) {
+    alert('No model selected. Please place .pt files in the models folder and refresh.')
+    return
+  }
+
   isLoading.value = true
   const initTime = Date.now()
   let paths = imagesToProcess.value.map((elm) => elm.inputPath)
@@ -157,7 +210,7 @@ async function startProcessing(): Promise<void> {
   console.log(paths)
 
   try {
-    const res = await window.api.fs.processImages(paths)
+    const res = await window.api.fs.processImages(paths, imageStore.selectedModel)
     const timeTaken = (Date.now() - initTime) / 1000
     paths = []
 
@@ -217,5 +270,20 @@ async function startProcessing(): Promise<void> {
 
 .list-leave-active {
   position: absolute;
+}
+
+.model-select {
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--br);
+  background-color: var(--bg-col-alt);
+  color: var(--txt-col);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: var(--fs-sm);
+  min-width: 150px;
+}
+
+.model-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

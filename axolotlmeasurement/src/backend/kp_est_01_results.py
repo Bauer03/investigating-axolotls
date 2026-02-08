@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import sys
 import json
+import argparse
 
 # Get correct path for bundled resources
 # (important for built app working on anyone's OS other than mine lol)
@@ -17,23 +18,17 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
+# --- Parse arguments ---
+parser = argparse.ArgumentParser()
+parser.add_argument('--model', default='models/best.pt', help='Path to .pt model file')
+parser.add_argument('images', nargs='+', help='Image file paths')
+args = parser.parse_args()
 
-def process_images(image_paths: list) -> list:
-    """
-    Process a list of image file paths through the YOLO model.
-    Returns a list of dicts with image_name, bounding_box, and keypoints.
-    """
-    model_path = resource_path("best.pt")
-    model = YOLO(model_path)
+# --- Initialize YOLO model ---
+model_path = resource_path(args.model)
+model = YOLO(model_path)
 
-    all_results = []
-    for i, img_path_str in enumerate(image_paths, 1):
-        image_path = Path(img_path_str)
-        try:
-            # printing to stderr so I don't accidentally read in my program, because of how this file is set up.
-            print(f"Processing {i}/{len(image_paths)}: {image_path.name}", file=sys.stderr)
-
-            results = model.predict(str(image_path), conf=0.25)
+image_files = [Path(p) for p in args.images]
 
             for result in results:
                 if result.boxes and result.keypoints:
