@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import { join } from 'path'
 import { promises as fs } from 'fs'
-import { ImageFile, Keypoint } from '../types'
+import { ImageFile } from '../types'
 
 interface ImageDatabase {
   version: number
@@ -108,21 +108,6 @@ export class JsonImageStorage {
         await this.save(this.cache)
       }
     }, 500) // Wait 500ms after last change before saving
-  }
-
-  /**
-   * This function can be deleted, remnant of a troubled past for my database
-   */
-  private normalizeKeypoints(keypoints: Keypoint[]): Keypoint[] {
-    if (!keypoints) {
-      // console.log('[JSON storage] No keypoints exist for this image') // clogs up console but useful
-      return []
-    }
-
-    // If it's already in the correct format (array of {name, x, y})
-    if (Array.isArray(keypoints) && keypoints[0]?.name !== undefined) {
-      return keypoints
-    } else return []
   }
 
   async getAllImages(): Promise<ImageFile[]> {
