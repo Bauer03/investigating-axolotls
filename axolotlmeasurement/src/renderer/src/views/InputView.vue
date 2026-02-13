@@ -275,7 +275,7 @@ async function startProcessing(): Promise<void> {
 .model-select {
   padding: 0.4rem 0.8rem;
   border-radius: var(--br);
-  background-color: var(--bg-col-alt);
+  background-color: var(--bg-col);
   color: var(--txt-col);
   border: 1px solid rgba(255, 255, 255, 0.2);
   font-size: var(--fs-sm);
