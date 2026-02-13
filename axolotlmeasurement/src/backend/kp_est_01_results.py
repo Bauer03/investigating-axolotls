@@ -18,17 +18,17 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-# --- Parse arguments ---
-parser = argparse.ArgumentParser()
-parser.add_argument('--model', default='models/best.pt', help='Path to .pt model file')
-parser.add_argument('images', nargs='+', help='Image file paths')
-args = parser.parse_args()
 
-# --- Initialize YOLO model ---
-model_path = resource_path(args.model)
-model = YOLO(model_path)
+def process_images(image_paths: list, model_path: str = "models/best.pt") -> list:
+    model_full_path = resource_path(model_path)
+    model = YOLO(model_full_path)
 
-image_files = [Path(p) for p in args.images]
+    image_files = [Path(p) for p in image_paths]
+    all_results = []
+
+    for image_path in image_files:
+        try:
+            results = model(image_path)
 
             for result in results:
                 if result.boxes and result.keypoints:
@@ -51,11 +51,11 @@ image_files = [Path(p) for p in args.images]
 
 # Keep CLI usage for standalone testing/debugging
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python kp_est_01_results.py <image_path_1> <image_path_2> ...", file=sys.stderr)
-        sys.exit(1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', default='models/best.pt', help='Path to .pt model file')
+    parser.add_argument('images', nargs='+', help='Image file paths')
+    args = parser.parse_args()
 
-    print(f"Found {len(sys.argv) - 1} images to process...", file=sys.stderr)
-    results = process_images(sys.argv[1:])
+    results = process_images(args.images, args.model)
     # i'm using this in main.py to read the results of this script, so important not to print anything else out to stdout!!!
     print(json.dumps(results))

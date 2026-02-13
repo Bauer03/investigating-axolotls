@@ -54,25 +54,10 @@ def process_images_endpoint(image_paths: ImagePaths):
     if '..' in image_paths.model or '/' in image_paths.model or '\\' in image_paths.model:
         return {"error": "Invalid model name"}
 
-    python_executable = sys.executable
     model_arg = f"models/{image_paths.model}"
 
     try:
-        # Pass the model and list of image paths to the script
-        result = subprocess.run(
-            [python_executable, "kp_est_01_results.py", "--model", model_arg, *image_paths.paths],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-
-        output_lines = result.stdout.strip().split('\n')
-        json_output_str = output_lines[-1]
-
-        model_data = json.loads(json_output_str)
-
-        # print("Model Data:", model_data)
-
+        model_data = run_model(image_paths.paths, model_arg)
         return {"message": "Images processed successfully!", "data": model_data}
     except Exception as e:
         print(f"Error running model: {e}")
