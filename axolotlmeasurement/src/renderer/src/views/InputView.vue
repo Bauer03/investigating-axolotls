@@ -258,7 +258,7 @@ async function startProcessing(): Promise<void> {
 }
 
 .input-active-container {
-  height: calc(100vh - 120px); /* full available height minus header */
+  height: 100%; /* fill the router-view-wrapper flex child */
 }
 
 .selection-container {

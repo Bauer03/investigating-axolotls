@@ -12,7 +12,17 @@ onMounted(async () => {
 
 <template>
   <Header></Header>
-  <RouterView />
+  <div class="router-view-wrapper">
+    <RouterView />
+  </div>
 </template>
 
-<style></style>
+<style>
+.router-view-wrapper {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+</style>
