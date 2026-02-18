@@ -152,7 +152,9 @@ const downloadAllImages = async (): Promise<void> => {
   for (const image of imageStore.imageList) {
     try {
       const base64Data = await window.api.fs.readFile(image.inputPath)
-      const imageUrl = `data:image/png;base64,${base64Data}`
+      const ext = image.name.split('.').pop()?.toLowerCase()
+      const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png'
+      const imageUrl = `data:${mime};base64,${base64Data}`
 
       // We need to wrap the image loading in a promise
       const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -233,15 +235,43 @@ const deleteSingleImage = (image: ImageFile | null): void => {
 }
 
 const downloadAllKeypointData = async (): Promise<void> => {
-  alert('Download All DATA functionality to be implemented!')
   isDropdownOpen.value = false
+
+  const headers = ['Model', 'Image', 'SVL (px)', 'Head-midU (px)', 'midU-midL (px)', 'midL-legs (px)', 'legs-Tail (px)']
+
+  const rows = galleryImages.value.map((image) => {
+    const m = image.measurements
+    return [
+      `"${image.modelName ?? ''}"`,
+      `"${image.name}"`,
+      m ? m.total_length.toFixed(2) : '',
+      m ? m.head_to_midU.toFixed(2) : '',
+      m ? m.midU_to_midL.toFixed(2) : '',
+      m ? m.midL_to_legs_midpoint.toFixed(2) : '',
+      m ? m.legs_midpoint_to_tail.toFixed(2) : '',
+    ].join(',')
+  })
+
+  const csv = [headers.join(','), ...rows].join('\n')
+
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'axolotl-measurements.csv'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
 async function downloadImage(image: ImageFile | null): Promise<void> {
   if (!image) return
 
   try {
     const base64Data = await window.api.fs.readFile(image.inputPath)
-    const imageUrl = `data:image/png;base64,${base64Data}`
+    const ext = image.name.split('.').pop()?.toLowerCase()
+    const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png'
+    const imageUrl = `data:${mime};base64,${base64Data}`
 
     const dataUrl = await new Promise<string>((resolve, reject) => {
       const img = new Image()
@@ -310,9 +340,23 @@ async function downloadImage(image: ImageFile | null): Promise<void> {
     alert('Failed to download image.')
   }
 }
-const copyData = (image: ImageFile | null): void => {
+const copyData = async (image: ImageFile | null): Promise<void> => {
   if (!image) return
-  alert(`Copying data for ${image.name}... (to be implemented)`)
+
+  const headers = ['Model', 'Image', 'SVL (px)', 'Head-midU (px)', 'midU-midL (px)', 'midL-legs (px)', 'legs-Tail (px)']
+  const m = image.measurements
+  const values = [
+    image.modelName ?? '',
+    image.name,
+    m ? m.total_length.toFixed(2) : '',
+    m ? m.head_to_midU.toFixed(2) : '',
+    m ? m.midU_to_midL.toFixed(2) : '',
+    m ? m.midL_to_legs_midpoint.toFixed(2) : '',
+    m ? m.legs_midpoint_to_tail.toFixed(2) : '',
+  ]
+
+  const csv = [headers.join('\t'), values.join('\t')].join('\n')
+  await navigator.clipboard.writeText(csv)
 }
 
 // --- logic for edit keypoint fullscreen modal
@@ -372,6 +416,8 @@ onMounted(() => {
 .gallery-right {
   flex-grow: 1;
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .action-bar {
