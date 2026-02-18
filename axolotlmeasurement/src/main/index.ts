@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, protocol, net } from 'electron'
 import { ChildProcess, spawn } from 'child_process'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -9,6 +9,13 @@ import fs from 'fs'
 import { crc32 } from 'zlib'
 import { JsonImageStorage } from './jsonStorage'
 const storage = new JsonImageStorage()
+
+// Register a custom protocol so the renderer can load local image files safely.
+// Usage: <img src="axolotl-file:///C:/path/to/image.jpg" />
+// This avoids issues with spaces and special characters in file paths.
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'axolotl-file', privileges: { secure: true, supportFetchAPI: true, stream: true } }
+])
 
 let backendProcess: ChildProcess | null = null
 
@@ -146,6 +153,14 @@ app.whenReady().then(async () => {
   // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
+  })
+
+  // Serve local image files via a custom protocol so the renderer can display
+  // them without running into Electron's restrictions on the file:// protocol.
+  protocol.handle('axolotl-file', (request) => {
+    // Strip the scheme prefix to get the raw file path
+    const filePath = decodeURIComponent(request.url.replace('axolotl-file://', ''))
+    return net.fetch(`file://${filePath}`)
   })
 
   // IPC test
