@@ -47,7 +47,7 @@
     </div>
   </div>
 
-  <div v-else class="flx col al-c gp1 w-full pd1 pt2">
+  <div v-else class="flx col al-c gp1 w-full pd1 pt2 input-active-container">
     <div class="flx al-c jc-sb w-full">
       <h3 class="txt-col">{{ prepText }}</h3>
       <div class="flx gp1">
@@ -99,7 +99,7 @@
       <span class="material-symbols-outlined loading icon">progress_activity</span>
     </div>
 
-    <div v-else class="flx col pd1 w-full selection-container br jc-sb gp05">
+    <div v-else class="flx col pd1 w-full selection-container br gp05">
       <!-- check w/ calvin about making gap between list items smaller -->
       <TransitionGroup name="list">
         <div v-for="image in imagesToProcess" :key="image.inputPath" class="glass-list-item">
@@ -257,13 +257,16 @@ async function startProcessing(): Promise<void> {
   border: 1px dashed var(--bg-col-alt);
 }
 
+.input-active-container {
+  height: calc(100vh - 120px); /* full available height minus header */
+}
+
 .selection-container {
-  max-height: 50vh;
-  overflow-y: scroll;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
   scrollbar-gutter: stable;
-  scrollbar-track-color: none;
   color: var(--txt-col);
-  /* background-color: var(--bg-col-alt); */
 }
 
 .closebtn {

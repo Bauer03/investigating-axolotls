@@ -2,7 +2,7 @@
   <div class="keypoint-container">
     <img
       ref="imageRef"
-      :src="imageSrc"
+      :src="safeImageSrc"
       alt="Keypoint image"
       class="display-image"
       @load="updateImageDimensions"
@@ -29,6 +29,18 @@ const props = defineProps<{
   keypoints?: Keypoint[]
   isEditable?: boolean // enable/disable editing
 }>()
+
+// Convert a raw local file path to our custom protocol URL so Electron serves
+// it correctly, even when the path contains spaces or special characters.
+const safeImageSrc = computed(() => {
+  const src = props.imageSrc
+  if (!src) return ''
+  // Already a data URL or custom protocol — pass through unchanged
+  if (src.startsWith('data:') || src.startsWith('axolotl-file://')) return src
+  // Convert Windows backslashes, then percent-encode the path component only
+  const normalized = src.replace(/\\/g, '/')
+  return 'axolotl-file://' + normalized.split('/').map(encodeURIComponent).join('/')
+})
 
 const emit = defineEmits(['update:keypoints']) // Define the event we will emit
 
