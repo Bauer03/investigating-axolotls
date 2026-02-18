@@ -38,6 +38,11 @@ body,
   overflow: hidden; /* prevent the whole app from scrolling */
 }
 
+#app {
+  display: flex;
+  flex-direction: column;
+}
+
 body {
   margin: 0;
   padding: var(--sp2) var(--sp2) var(--sp1) var(--sp2);
