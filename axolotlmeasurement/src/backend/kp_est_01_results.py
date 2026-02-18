@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 import json
 import argparse
+import math
 
 # Get correct path for bundled resources
 # (important for built app working on anyone's OS other than mine lol)
@@ -19,6 +20,10 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
+def euclidean(a, b):
+    return math.hypot(a['x'] - b['x'], a['y'] - b['y'])
+
+
 def process_images(image_paths: list, model_path: str = "models/best.pt") -> list:
     model_full_path = resource_path(model_path)
     model = YOLO(model_full_path)
@@ -32,10 +37,59 @@ def process_images(image_paths: list, model_path: str = "models/best.pt") -> lis
 
             for result in results:
                 if result.boxes and result.keypoints:
+                    kp_list = []
+                    measurements = {}
+
+                    pts = result.keypoints.xy[0] if len(result.keypoints.xy) > 0 else []
+                    pts_conf = result.keypoints.conf[0] if result.keypoints.conf is not None and len(result.keypoints.conf) > 0 else []
+
+                    if len(pts) >= 6:
+                        # 6-keypoint model: index order is Tail, Head, midU, midL, leg1, leg2
+                        tail     = {"name": "Tail",  "x": float(pts[0][0]), "y": float(pts[0][1]), "confidence": float(pts_conf[0]) if len(pts_conf) > 0 else 0.0}
+                        head     = {"name": "Head",  "x": float(pts[1][0]), "y": float(pts[1][1]), "confidence": float(pts_conf[1]) if len(pts_conf) > 1 else 0.0}
+                        midU     = {"name": "midU",  "x": float(pts[2][0]), "y": float(pts[2][1]), "confidence": float(pts_conf[2]) if len(pts_conf) > 2 else 0.0}
+                        midL     = {"name": "midL",  "x": float(pts[3][0]), "y": float(pts[3][1]), "confidence": float(pts_conf[3]) if len(pts_conf) > 3 else 0.0}
+                        leg1     = {"x": float(pts[4][0]), "y": float(pts[4][1]), "confidence": float(pts_conf[4]) if len(pts_conf) > 4 else 0.0}
+                        leg2     = {"x": float(pts[5][0]), "y": float(pts[5][1]), "confidence": float(pts_conf[5]) if len(pts_conf) > 5 else 0.0}
+
+                        legs_midpoint = {
+                            "name": "legs_midpoint",
+                            "x": (leg1["x"] + leg2["x"]) / 2.0,
+                            "y": (leg1["y"] + leg2["y"]) / 2.0,
+                            "confidence": (leg1["confidence"] + leg2["confidence"]) / 2.0
+                        }
+
+                        dist_head_midU    = euclidean(head, midU)
+                        dist_midU_midL    = euclidean(midU, midL)
+                        dist_midL_legs    = euclidean(midL, legs_midpoint)
+                        dist_legs_tail    = euclidean(legs_midpoint, tail)
+                        SVL               = dist_head_midU + dist_midU_midL + dist_midL_legs
+
+                        # 5 display points (leg1 + leg2 collapsed into legs_midpoint)
+                        kp_list = [head, midU, midL, legs_midpoint, tail]
+
+                        measurements = {
+                            "head_to_midU": dist_head_midU,
+                            "midU_to_midL": dist_midU_midL,
+                            "midL_to_legs_midpoint": dist_midL_legs,
+                            "legs_midpoint_to_tail": dist_legs_tail,
+                            "total_length": SVL
+                        }
+                    else:
+                        # Fallback: fewer than 6 keypoints — return raw unnamed points
+                        for i, (point, point_conf) in enumerate(zip(pts, pts_conf)):
+                            kp_list.append({
+                                "name": f"Keypoint {i + 1}",
+                                "x": float(point[0]),
+                                "y": float(point[1]),
+                                "confidence": float(point_conf)
+                            })
+
                     image_data = {
                         "image_name": image_path.name,
                         "bounding_box": result.boxes.xyxy.tolist(),
-                        "keypoints": result.keypoints.xy.tolist()
+                        "keypoints": kp_list,
+                        "measurements": measurements
                     }
                     all_results.append(image_data)
 

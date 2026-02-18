@@ -62,7 +62,8 @@ const api: AxolotlAPI = {
   },
 
   models: {
-    listModels: (): Promise<string[]> => ipcRenderer.invoke('models:list')
+    listModels: (): Promise<string[]> => ipcRenderer.invoke('models:list'),
+    openModelsFolder: (): Promise<void> => ipcRenderer.invoke('models:open-folder')
   },
 
   downloadAllImages: (

@@ -22,6 +22,13 @@
         >
           <span class="material-icons-outlined icon">refresh</span>
         </button>
+        <button
+          class="discreet-btn flx al-c"
+          title="Open models folder"
+          @click="openModelsFolder"
+        >
+          <span class="material-icons-outlined icon">folder_open</span>
+        </button>
       </div>
       <div class="draganddrop glass-panel flx col al-c gp1 pd2">
         <span>Drag and drop images/folders here (WIP)</span>
@@ -77,6 +84,14 @@
         @click="imageStore.loadModels()"
       >
         <span class="material-icons-outlined icon">refresh</span>
+      </button>
+      <button
+        class="discreet-btn flx al-c"
+        title="Open models folder"
+        :disabled="isLoading"
+        @click="openModelsFolder"
+      >
+        <span class="material-icons-outlined icon">folder_open</span>
       </button>
     </div>
 
@@ -191,6 +206,10 @@ function clearInput(): void {
   failedFileCount.value = 0
   isLoading.value = false
   imageStore.clearAllInputImages() // selectedToProcess is reset by imageStore function
+}
+
+async function openModelsFolder(): Promise<void> {
+  await window.api.models.openModelsFolder()
 }
 
 async function removeFile(path: string): Promise<void> {
