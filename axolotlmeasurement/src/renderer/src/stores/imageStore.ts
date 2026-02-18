@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { ImageFile, AxoData, Keypoint } from 'src/types'
+import { ImageFile, AxoData, Keypoint, Measurements } from 'src/types'
 
 export const useImageStore = defineStore('imageStore', () => {
   const imageList = ref<ImageFile[]>([])
@@ -31,8 +31,10 @@ export const useImageStore = defineStore('imageStore', () => {
       } else if (Array.isArray(data) && Array.isArray(data[0]) && typeof data[0][0] === 'number') {
         parsed = data
       } else if (Array.isArray(data) && data[0]?.name !== undefined) {
-        // Already in correct format
-        return data as Keypoint[]
+        // Named keypoint objects from backend — strip confidence, keep name/x/y
+        return (data as { name: string; x: number; y: number; confidence?: number }[]).map(
+          (kp) => ({ name: kp.name, x: kp.x, y: kp.y })
+        )
       } else {
         return []
       }
@@ -157,19 +159,24 @@ export const useImageStore = defineStore('imageStore', () => {
       if (resultsMap.has(imageInStore.name)) {
         const result = resultsMap.get(imageInStore.name)!
         const formattedKeypoints = parseAndFormatKeypoints(result.keypoints)
+        const measurements = result.measurements as Measurements | undefined
 
         // Update local state - everything goes directly on the image object
         imageInStore.processed = true
         imageInStore.keypoints = formattedKeypoints
         imageInStore.boundingBox = result.bounding_box
         imageInStore.modelName = selectedModel.value
+        if (measurements) {
+          imageInStore.measurements = measurements
+        }
 
         // Update database
         await window.api.updateImage(imageInStore.inputPath, {
           processed: true,
           keypoints: formattedKeypoints,
           boundingBox: result.bounding_box,
-          modelName: selectedModel.value
+          modelName: selectedModel.value,
+          ...(measurements ? { measurements } : {})
         })
       }
     }
@@ -202,7 +209,8 @@ export const useImageStore = defineStore('imageStore', () => {
         ...img,
         keypoints: parseAndFormatKeypoints(img.keypoints),
         boundingBox: img.boundingBox || [],
-        modelName: img.modelName || ''
+        modelName: img.modelName || '',
+        measurements: img.measurements
       }))
     } catch (error) {
       console.error('Failed to load existing images:', error)

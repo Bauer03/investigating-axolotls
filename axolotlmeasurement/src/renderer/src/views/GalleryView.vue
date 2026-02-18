@@ -57,6 +57,22 @@
         Model: {{ selectedImage.modelName }}
       </div>
 
+      <div v-if="selectedImage?.measurements" class="glass-panel pd1 measurements-panel">
+        <span class="measurements-title txt-col">Measurements (px)</span>
+        <div class="measurements-grid">
+          <span class="txt-col">SVL (total)</span>
+          <span class="measurement-value">{{ selectedImage.measurements.total_length.toFixed(1) }}</span>
+          <span class="txt-col">Head → midU</span>
+          <span class="measurement-value">{{ selectedImage.measurements.head_to_midU.toFixed(1) }}</span>
+          <span class="txt-col">midU → midL</span>
+          <span class="measurement-value">{{ selectedImage.measurements.midU_to_midL.toFixed(1) }}</span>
+          <span class="txt-col">midL → legs</span>
+          <span class="measurement-value">{{ selectedImage.measurements.midL_to_legs_midpoint.toFixed(1) }}</span>
+          <span class="txt-col">legs → Tail</span>
+          <span class="measurement-value">{{ selectedImage.measurements.legs_midpoint_to_tail.toFixed(1) }}</span>
+        </div>
+      </div>
+
       <div class="glass-panel pd1 flx gp1 jc-end">
         <button class="discreet-btn flx gp05 al-c" @click="copyData(selectedImage)">
           <span class="material-icons-outlined">content_copy</span>
@@ -452,5 +468,31 @@ onMounted(() => {
   padding: var(--sp1);
   background-color: var(--bg-col);
   border-radius: var(--br);
+}
+
+.measurements-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.measurements-title {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.measurements-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.2rem 1rem;
+  font-size: var(--fs-sm);
+}
+
+.measurement-value {
+  color: var(--txt-col);
+  opacity: 0.8;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 </style>

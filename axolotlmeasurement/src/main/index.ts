@@ -177,6 +177,21 @@ app.whenReady().then(async () => {
     }
   })
 
+  ipcMain.handle('models:open-folder', async () => {
+    // In dev, models live next to the Python backend source
+    // In production, they live next to the bundled server executable
+    const modelsPath = is.dev
+      ? join(__dirname, '../../backend/models')
+      : join(process.resourcesPath, 'resources', 'axolotl-server', 'models')
+
+    // Create the folder if it doesn't exist yet so the user can see it
+    if (!fs.existsSync(modelsPath)) {
+      fs.mkdirSync(modelsPath, { recursive: true })
+    }
+
+    await shell.openPath(modelsPath)
+  })
+
   ipcMain.handle(
     'fs:embed-png-metadata',
     async (_: unknown, pngBase64: string, metadata: Record<string, string>) => {

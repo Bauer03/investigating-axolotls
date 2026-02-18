@@ -5,9 +5,18 @@ export type fileOptions = 'file' | 'folder'
 
 // The fundamental keypoint structure - a labeled point in 2D space
 export interface Keypoint {
-  name: string // Like "Snout", "Neck", etc.
+  name: string // Like "Head", "midU", "legs_midpoint", "Tail"
   x: number // X coordinate in pixels (relative to original image size)
   y: number // Y coordinate in pixels (relative to original image size)
+}
+
+// Computed length measurements from the 6-keypoint model
+export interface Measurements {
+  head_to_midU: number
+  midU_to_midL: number
+  midL_to_legs_midpoint: number
+  legs_midpoint_to_tail: number
+  total_length: number // SVL (snout-vent length proxy)
 }
 
 // The main structure for an image in your application
@@ -21,6 +30,7 @@ export interface ImageFile {
   keypoints: Keypoint[] // The keypoint data - always present, empty array if none
   boundingBox: number[] // Bounding box coordinates [x1, y1, x2, y2] - empty if none
   modelName: string // Which .pt model was used to process this image
+  measurements?: Measurements // Named segment lengths from 6-keypoint model
 }
 
 // This interface describes what the Python backend returns
@@ -28,7 +38,8 @@ export interface ImageFile {
 export interface AxoData {
   image_name: string // Matches ImageFile.name
   bounding_box: number[] // Gets converted to ImageFile.boundingBox
-  keypoints: Keypoint[] | number[][] // Backend might return nested arrays, we normalize this
+  keypoints: Keypoint[] | number[][] // Backend returns named keypoints or raw arrays
+  measurements?: Measurements // Named segment lengths (present when 6-keypoint model used)
 }
 
 // Used to specify which images to delete in bulk operations
@@ -46,6 +57,7 @@ export interface ImageUpdateData {
   keypoints?: Keypoint[]
   boundingBox?: number[]
   modelName?: string
+  measurements?: Measurements
 }
 
 // The successful response from image processing
@@ -90,6 +102,7 @@ export interface AxolotlAPI {
   // Model operations
   models: {
     listModels: () => Promise<string[]>
+    openModelsFolder: () => Promise<void>
   }
 
   // Batch download functionality
