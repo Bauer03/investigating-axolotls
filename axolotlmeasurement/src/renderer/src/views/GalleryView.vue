@@ -43,18 +43,37 @@
     </div>
 
     <div class="gallery-right flx col gp1">
-      <div class="glass-preview flx">
-        <KeypointDisplay
-          v-if="selectedImage"
-          :image-src="selectedImage.inputPath"
-          :keypoints="selectedImage.keypoints"
-          class="selected-image"
-          @click="openFullscreen(selectedImage)"
-        />
-      </div>
+      <div class="image-and-buttons flx gp1">
+        <div class="glass-preview flx">
+          <KeypointDisplay
+            v-if="selectedImage"
+            :image-src="selectedImage.inputPath"
+            :keypoints="selectedImage.keypoints"
+            class="selected-image"
+            @click="openFullscreen(selectedImage)"
+          />
+        </div>
 
-      <div v-if="selectedImage?.modelName" class="model-info txt-col">
-        Model: {{ selectedImage.modelName }}
+        <div class="button-column flx col gp05">
+          <div v-if="selectedImage?.modelName" class="model-info txt-col">
+            Model: {{ selectedImage.modelName }}
+          </div>
+          <button class="discreet-btn flx gp05 al-c" @click="downloadImage(selectedImage)">
+            <span class="material-icons-outlined">download</span>
+            Download
+          </button>
+          <button class="discreet-btn flx gp05 al-c" @click="copyData(selectedImage)">
+            <span class="material-icons-outlined">content_copy</span>
+            Copy Data
+          </button>
+          <button
+            class="danger-btn discreet-btn flx gp05 al-c"
+            @click="deleteSingleImage(selectedImage)"
+          >
+            <span class="material-icons-outlined">delete</span>
+            Delete
+          </button>
+        </div>
       </div>
 
       <div v-if="selectedImage?.measurements" class="glass-panel pd1 measurements-panel">
@@ -71,24 +90,6 @@
           <span class="txt-col">legs → Tail</span>
           <span class="measurement-value">{{ selectedImage.measurements.legs_midpoint_to_tail.toFixed(1) }}</span>
         </div>
-      </div>
-
-      <div class="glass-panel pd1 flx gp1 jc-end">
-        <button class="discreet-btn flx gp05 al-c" @click="copyData(selectedImage)">
-          <span class="material-icons-outlined">content_copy</span>
-          Copy Data
-        </button>
-        <button class="discreet-btn flx gp05 al-c" @click="downloadImage(selectedImage)">
-          <span class="material-icons-outlined">download</span>
-          Download image
-        </button>
-        <button
-          class="danger-btn discreet-btn flx gp05 al-c"
-          @click="deleteSingleImage(selectedImage)"
-        >
-          <span class="material-icons-outlined">delete</span>
-          Delete Image
-        </button>
       </div>
     </div>
   </div>
@@ -482,10 +483,21 @@ onMounted(() => {
   padding: 0 0.25rem;
 }
 
+.image-and-buttons {
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+}
+
 .glass-preview {
-  align-self: flex-start;
+  flex: 1;
+  min-width: 0;
+}
+
+.button-column {
   flex-shrink: 0;
-  max-width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 .fullscreen-modal {
   position: fixed;

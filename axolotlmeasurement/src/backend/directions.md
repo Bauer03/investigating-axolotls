@@ -31,3 +31,26 @@ KEEP THIS TERMINAL TAB OPEN UNTIL YOU WANT TO SHUT DOWN THE PROGRAM
 5) Run npm install
 6) Run npm start. This will start the electron application (including main/renderer electron processes).
 KEEP THIS TERMINAL TAB OPEN UNTIL YOU WANT TO SHUT DOWN THE PROGRAM
+
+## Building a distributable Windows installer
+
+This packages the app into a standalone `.exe` installer that can be installed on any Windows machine without needing Node, Python, or a dev environment.
+
+Before building:
+- Make sure you are in the `axolotlmeasurement` directory.
+- Make sure `npm install` has been run at least once.
+- Place any `.pt` model files you want bundled into `resources/axolotl-server/models/`. These will be included in the installer and available to the app out of the box. (The `6kp.pt` model is already there.)
+
+To build:
+
+```
+npm run build:win
+```
+
+This will:
+1. Type-check the TypeScript source
+2. Compile the Electron main/preload/renderer bundles
+3. Package everything into `dist/axolotlmeasurement-1.0.0-setup.exe` (one-click NSIS installer)
+4. Also produce `dist/InvestigatingAxolotls-1.0.0-win.zip` (portable zip, no installation needed)
+
+Note: Windows SmartScreen may warn on first run because the executable is not code-signed. Click "More info → Run anyway" to proceed. This is expected when building without a code-signing certificate.

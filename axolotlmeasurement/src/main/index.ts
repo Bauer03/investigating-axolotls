@@ -101,7 +101,7 @@ function stopBackend(): void {
 function createWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
+    width: 1000,
     height: 670,
     show: false,
     autoHideMenuBar: true,
@@ -196,7 +196,7 @@ app.whenReady().then(async () => {
     // In dev, models live next to the Python backend source
     // In production, they live next to the bundled server executable
     const modelsPath = is.dev
-      ? join(__dirname, '../../backend/models')
+      ? join(__dirname, '../../src/backend/models')
       : join(process.resourcesPath, 'resources', 'axolotl-server', 'models')
 
     // Create the folder if it doesn't exist yet so the user can see it
