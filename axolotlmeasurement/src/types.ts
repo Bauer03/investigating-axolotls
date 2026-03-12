@@ -101,7 +101,7 @@ export interface AxolotlAPI {
 
   // Model operations
   models: {
-    listModels: () => Promise<string[]>
+    listModels: () => Promise<string[] | { error: string; logPath: string }>
     openModelsFolder: () => Promise<void>
   }
 

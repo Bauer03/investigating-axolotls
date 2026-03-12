@@ -51,9 +51,18 @@ export const useImageStore = defineStore('imageStore', () => {
   }
   async function loadModels(): Promise<void> {
     try {
-      availableModels.value = await window.api.models.listModels()
-      if (availableModels.value.length > 0 && !selectedModel.value) {
-        selectedModel.value = availableModels.value[0]
+      const result = await window.api.models.listModels()
+      if (Array.isArray(result)) {
+        availableModels.value = result
+        if (availableModels.value.length > 0 && !selectedModel.value) {
+          selectedModel.value = availableModels.value[0]
+        }
+      } else if (result && typeof result === 'object' && 'error' in result) {
+        availableModels.value = []
+        const logPath = (result as { error: string; logPath: string }).logPath
+        alert(
+          `The Python backend failed to start.\n\nCheck the log for details:\n${logPath}`
+        )
       }
     } catch (error) {
       console.error('Failed to load models:', error)

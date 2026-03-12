@@ -1,9 +1,26 @@
+import os
+import sys
+
+# PyInstaller + PyTorch on Windows: torch's DLLs (c10.dll etc.) won't load unless
+# their directory is explicitly added to the DLL search path before any torch import.
+# This must happen before the kp_est_01_results import that triggers torch loading.
+if getattr(sys, 'frozen', False) and hasattr(os, 'add_dll_directory'):
+    _internal = os.path.join(os.path.dirname(sys.executable), '_internal')
+    for _dll_dir in [_internal, os.path.join(_internal, 'torch', 'lib')]:
+        if os.path.isdir(_dll_dir):
+            os.add_dll_directory(_dll_dir)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
-import os
 from kp_est_01_results import process_images as run_model
+
+def get_base_dir() -> str:
+    """Return the directory containing the running exe (production) or this script (dev)."""
+    if getattr(sys, 'frozen', False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
 
 app = FastAPI()
 
@@ -34,7 +51,7 @@ def read_root():
 
 @app.get("/models")
 def list_models():
-    models_dir = os.path.join(os.path.abspath("."), "models")
+    models_dir = os.path.join(get_base_dir(), "models")
     if not os.path.isdir(models_dir):
         os.makedirs(models_dir, exist_ok=True)
         return {"models": []}
@@ -54,7 +71,7 @@ def process_images_endpoint(image_paths: ImagePaths):
     if '..' in image_paths.model or '/' in image_paths.model or '\\' in image_paths.model:
         return {"error": "Invalid model name"}
 
-    model_arg = f"models/{image_paths.model}"
+    model_arg = os.path.join(get_base_dir(), "models", image_paths.model)
 
     try:
         model_data = run_model(image_paths.paths, model_arg)

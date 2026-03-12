@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(npm run build:win:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(\"C:\\\\Users\\\\paula\\\\Documents\\\\GitHub\\\\investigating-axolotls\\\\axolotlmeasurement\\\\src\\\\backend\\\\venv\\\\Scripts\\\\pyinstaller.exe\" --version)",
+      "Bash(src/backend/venv/Scripts/pip install:*)",
+      "Bash(src/backend/venv/Scripts/pyinstaller:*)",
+      "Bash(robocopy:*)"
     ]
   }
 }

@@ -36,12 +36,29 @@ KEEP THIS TERMINAL TAB OPEN UNTIL YOU WANT TO SHUT DOWN THE PROGRAM
 
 This packages the app into a standalone `.exe` installer that can be installed on any Windows machine without needing Node, Python, or a dev environment.
 
-Before building:
-- Make sure you are in the `axolotlmeasurement` directory.
-- Make sure `npm install` has been run at least once.
-- Place any `.pt` model files you want bundled into `resources/axolotl-server/models/`. These will be included in the installer and available to the app out of the box. (The `6kp.pt` model is already there.)
+### Step 1 — Compile the Python backend
 
-To build:
+The FastAPI backend must be compiled into a standalone executable using PyInstaller **before** running the Electron build. This step is required whenever `main.py` or `kp_est_01_results.py` have changed. The compiled exe is not tracked in git.
+
+From the `axolotlmeasurement` directory:
+
+```
+src/backend/venv/Scripts/pip install pyinstaller
+src/backend/venv/Scripts/pyinstaller --onedir --name axolotl-server --distpath build/backend-dist --noconfirm src/backend/main.py
+robocopy build\backend-dist\axolotl-server resources\axolotl-server /E /NP
+```
+
+This builds to a temporary directory first, then merges the output into `resources/axolotl-server/` (preserving the `models/` folder). Electron expects the exe at `resources/axolotl-server/axolotl-server.exe`.
+
+Note: `--onedir` is preferred over `--onefile`. With `--onefile`, PyInstaller must extract ~500MB of ML libraries to a temp folder on every launch, which can take longer than Electron's startup timeout and cause the backend to appear unresponsive.
+
+### Step 2 — Place model files
+
+Place any `.pt` model files you want bundled into `resources/axolotl-server/models/`. These will be included in the installer and available to the app out of the box. (The `6kp.pt` model is already there.)
+
+### Step 3 — Build the Electron app
+
+Make sure you are in the `axolotlmeasurement` directory and `npm install` has been run at least once.
 
 ```
 npm run build:win

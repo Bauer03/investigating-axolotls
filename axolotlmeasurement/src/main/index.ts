@@ -18,19 +18,26 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 let backendProcess: ChildProcess | null = null
+let backendCrashed = false
+let backendLogPath = ''
 
 function startBackend(): Promise<void> {
   return new Promise((resolve, reject) => {
-    const serverPath = join(
-      process.resourcesPath,
-      'resources',
-      'axolotl-server',
-      'axolotl-server.exe'
-    )
+    const serverDir = join(process.resourcesPath, 'resources', 'axolotl-server')
+    const serverPath = join(serverDir, 'axolotl-server.exe')
+    backendLogPath = join(app.getPath('userData'), 'backend.log')
+    backendCrashed = false
+
+    // Write a header to the log so each run is easy to find
+    const timestamp = new Date().toISOString()
+    fs.writeFileSync(backendLogPath, `=== Backend started ${timestamp} ===\nPath: ${serverPath}\n\n`)
+    const logStream = fs.createWriteStream(backendLogPath, { flags: 'a' })
 
     console.log('[Backend] Starting server from:', serverPath)
+    console.log('[Backend] Log file:', backendLogPath)
 
     backendProcess = spawn(serverPath, [], {
+      cwd: serverDir,
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true
     })
@@ -39,6 +46,7 @@ function startBackend(): Promise<void> {
 
     backendProcess.stdout?.on('data', (data: Buffer) => {
       const output = data.toString()
+      logStream.write('[stdout] ' + output)
       console.log('[Backend stdout]', output)
       if (
         !resolved &&
@@ -51,6 +59,7 @@ function startBackend(): Promise<void> {
 
     backendProcess.stderr?.on('data', (data: Buffer) => {
       const output = data.toString()
+      logStream.write('[stderr] ' + output)
       console.log('[Backend stderr]', output)
       if (
         !resolved &&
@@ -62,16 +71,27 @@ function startBackend(): Promise<void> {
     })
 
     backendProcess.on('error', (err) => {
+      logStream.write('[error] Failed to start: ' + err.message + '\n')
       console.error('[Backend] Failed to start:', err)
       if (!resolved) {
         resolved = true
+        backendCrashed = true
         reject(err)
       }
     })
 
     backendProcess.on('exit', (code) => {
+      logStream.write(`[exit] Process exited with code ${code}\n`)
       console.log('[Backend] Process exited with code:', code)
+      if (!resolved) {
+        // Exited before signaling ready — it crashed
+        resolved = true
+        backendCrashed = true
+        logStream.write('[CRASH] Exited before signaling ready\n')
+        resolve()
+      }
       backendProcess = null
+      logStream.end()
     })
 
     // Timeout: if server doesn't signal ready within 30 seconds, resolve anyway
@@ -79,6 +99,8 @@ function startBackend(): Promise<void> {
     setTimeout(() => {
       if (!resolved) {
         resolved = true
+        backendCrashed = true
+        logStream.write('[TIMEOUT] Server did not signal ready within 30s\n')
         console.log('[Backend] Startup timeout reached, continuing anyway')
         resolve()
       }
@@ -182,13 +204,18 @@ app.whenReady().then(async () => {
   })
 
   ipcMain.handle('models:list', async () => {
+    if (backendCrashed) {
+      console.error('[Backend] Skipping models fetch — backend is not running. Log:', backendLogPath)
+      return { error: 'backend_not_running', logPath: backendLogPath }
+    }
     try {
       const response = await fetch('http://localhost:8001/models')
       const data = (await response.json()) as { models: string[] }
       return data.models
     } catch (error) {
       console.error('Error fetching models:', error)
-      return []
+      backendCrashed = true
+      return { error: 'backend_not_running', logPath: backendLogPath }
     }
   })
 

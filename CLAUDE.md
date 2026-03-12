@@ -31,11 +31,36 @@ npm run typecheck           # Both node and web
 npm run typecheck:node      # Main/preload only
 npm run typecheck:web       # Renderer only
 
-# Build
+# Build — IMPORTANT: compile the Python backend first (see below), then run:
 npm run build:win           # Windows installer
 npm run build:mac           # macOS app
 npm run build:linux         # Linux AppImage + deb
 ```
+
+## Versioning
+
+**Always increment the patch version in `axolotlmeasurement/package.json` before running any build.** This makes it easy to verify which version is installed.
+
+- The version field is at the top of `package.json`: `"version": "1.0.x"`
+- Increment the patch number (last digit) by 1 each build: 1.0.0 → 1.0.1 → 1.0.2, etc.
+- The version appears in the installer filename (`axolotlmeasurement-1.0.x-setup.exe`) and in the Windows Add/Remove Programs entry, so the user can always confirm which build is installed.
+
+### Building the Python backend (required before any Electron build)
+
+The FastAPI server must be compiled to `resources/axolotl-server/axolotl-server.exe` via PyInstaller **before** running `npm run build:*`. This file is gitignored and must be produced locally. Run this whenever `main.py` or `kp_est_01_results.py` change:
+
+```bash
+# From the axolotlmeasurement directory
+src/backend/venv/Scripts/pip install pyinstaller
+src/backend/venv/Scripts/pyinstaller --onedir --name axolotl-server --distpath build/backend-dist --noconfirm src/backend/main.py
+robocopy build\backend-dist\axolotl-server resources\axolotl-server /E /NP
+```
+
+Use `--onedir` (not `--onefile`). The `--onefile` approach bundles everything into a single self-extracting exe that must decompress ~500MB of ML libraries to a temp folder on every launch — this routinely exceeds Electron's 30-second backend startup timeout, causing the backend to silently fail. `--onedir` pre-extracts everything so startup is near-instant.
+
+Build to `build/backend-dist/` first, then use `robocopy` to merge into `resources/axolotl-server/` — this preserves the `models/` subfolder that PyInstaller would otherwise delete.
+
+Place bundled `.pt` model files in `resources/axolotl-server/models/` before running the Electron build.
 
 ## Code Style
 
@@ -80,6 +105,8 @@ All renderer↔main communication goes through `window.api` (typed as `AxolotlAP
 
 - **Dev**: Backend is started manually with `npm run start-backend`. The Electron main process does NOT auto-start it (`if (!is.dev)` guard in `src/main/index.ts`).
 - **Production**: The Python backend is compiled to `axolotl-server.exe` via PyInstaller and bundled at `resources/axolotl-server/`. Electron auto-starts it at `app.whenReady()` and kills it on `before-quit`.
+
+**Critical — model path resolution**: The `spawn()` call in `src/main/index.ts` sets `cwd` to the `axolotl-server/` directory so the backend's working directory is correct. `main.py` uses `get_base_dir()` (which checks `sys.frozen` / `sys.executable`) to resolve the `models/` folder relative to the exe, not the process CWD. Both must stay consistent — never use `os.path.abspath(".")` or relative paths for model lookups in the backend.
 
 ### Custom Protocol
 
