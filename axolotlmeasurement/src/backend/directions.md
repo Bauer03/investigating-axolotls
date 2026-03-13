@@ -36,25 +36,29 @@ KEEP THIS TERMINAL TAB OPEN UNTIL YOU WANT TO SHUT DOWN THE PROGRAM
 
 This packages the app into a standalone `.exe` installer that can be installed on any Windows machine without needing Node, Python, or a dev environment.
 
-### Step 1 — Compile the Python backend
+The production backend uses an **embedded Python runtime** — a self-contained Python installation bundled inside the app. This avoids the DLL initialization issues that PyInstaller's frozen mode causes with PyTorch on Windows.
 
-The FastAPI backend must be compiled into a standalone executable using PyInstaller **before** running the Electron build. This step is required whenever `main.py` or `kp_est_01_results.py` have changed. The compiled exe is not tracked in git.
+### Step 1 — Set up the embedded Python runtime (first time only)
 
-From the `axolotlmeasurement` directory:
+Run this once from the `axolotlmeasurement` directory, or again whenever `requirements.txt` changes:
 
 ```
-src/backend/venv/Scripts/pip install pyinstaller
-src/backend/venv/Scripts/pyinstaller --onedir --name axolotl-server --distpath build/backend-dist --noconfirm src/backend/main.py
-robocopy build\backend-dist\axolotl-server resources\axolotl-server /E /NP
+powershell -ExecutionPolicy Bypass -File setup-python-runtime.ps1
 ```
 
-This builds to a temporary directory first, then merges the output into `resources/axolotl-server/` (preserving the `models/` folder). Electron expects the exe at `resources/axolotl-server/axolotl-server.exe`.
+This script:
+- Downloads the official Python 3.12 embeddable package from python.org
+- Installs pip into it
+- Installs all packages from `src/backend/requirements.txt`
+- Places everything in `resources/python-runtime/`
 
-Note: `--onedir` is preferred over `--onefile`. With `--onefile`, PyInstaller must extract ~500MB of ML libraries to a temp folder on every launch, which can take longer than Electron's startup timeout and cause the backend to appear unresponsive.
+This folder is gitignored (it's large). Any developer or CI environment needs to run this script once before building.
 
 ### Step 2 — Place model files
 
-Place any `.pt` model files you want bundled into `resources/axolotl-server/models/`. These will be included in the installer and available to the app out of the box. (The `6kp.pt` model is already there.)
+Place any `.pt` model files you want bundled into `resources/python-backend/models/`. These will be included in the installer. (`6kp.pt` and `best.pt` are already there.)
+
+Note: model files are gitignored (`*.pt` in `.gitignore`), so they must be added manually to this folder on each machine.
 
 ### Step 3 — Build the Electron app
 
@@ -67,7 +71,21 @@ npm run build:win
 This will:
 1. Type-check the TypeScript source
 2. Compile the Electron main/preload/renderer bundles
-3. Package everything into `dist/axolotlmeasurement-1.0.0-setup.exe` (one-click NSIS installer)
-4. Also produce `dist/InvestigatingAxolotls-1.0.0-win.zip` (portable zip, no installation needed)
+3. Copy `resources/python-runtime/` (embedded Python), `resources/python-backend/` (models), and `src/backend/main.py` + `src/backend/kp_est_01_results.py` (backend scripts) into the app package
+4. Package everything into `dist/axolotlmeasurement-x.x.x-setup.exe` (one-click NSIS installer)
+5. Also produce `dist/InvestigatingAxolotls-x.x.x-win.zip` (portable zip, no installation needed)
+
+Always increment the patch version in `package.json` before building so you can verify which version is installed.
 
 Note: Windows SmartScreen may warn on first run because the executable is not code-signed. Click "More info → Run anyway" to proceed. This is expected when building without a code-signing certificate.
+
+### How the production backend works
+
+In production, Electron spawns:
+```
+resources/python-runtime/python.exe resources/python-backend/main.py
+```
+with `cwd` set to `resources/python-backend/`. The backend's `get_base_dir()` function returns that directory, so it finds models at `resources/python-backend/models/`. The backend log (useful for diagnosing startup failures) is written to:
+```
+%APPDATA%\axolotlmeasurement\backend.log
+```

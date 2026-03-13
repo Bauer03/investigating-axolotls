@@ -31,7 +31,7 @@ npm run typecheck           # Both node and web
 npm run typecheck:node      # Main/preload only
 npm run typecheck:web       # Renderer only
 
-# Build — IMPORTANT: compile the Python backend first (see below), then run:
+# Build — IMPORTANT: run setup-python-runtime.ps1 first (see below), then:
 npm run build:win           # Windows installer
 npm run build:mac           # macOS app
 npm run build:linux         # Linux AppImage + deb
@@ -45,22 +45,27 @@ npm run build:linux         # Linux AppImage + deb
 - Increment the patch number (last digit) by 1 each build: 1.0.0 → 1.0.1 → 1.0.2, etc.
 - The version appears in the installer filename (`axolotlmeasurement-1.0.x-setup.exe`) and in the Windows Add/Remove Programs entry, so the user can always confirm which build is installed.
 
-### Building the Python backend (required before any Electron build)
+### Building the Python backend (required before first build)
 
-The FastAPI server must be compiled to `resources/axolotl-server/axolotl-server.exe` via PyInstaller **before** running `npm run build:*`. This file is gitignored and must be produced locally. Run this whenever `main.py` or `kp_est_01_results.py` change:
+The backend uses an **embedded Python runtime** (no PyInstaller). The runtime lives at `resources/python-runtime/` and is created by a one-time setup script. It is gitignored and must be produced locally.
 
-```bash
-# From the axolotlmeasurement directory
-src/backend/venv/Scripts/pip install pyinstaller
-src/backend/venv/Scripts/pyinstaller --onedir --name axolotl-server --distpath build/backend-dist --noconfirm src/backend/main.py
-robocopy build\backend-dist\axolotl-server resources\axolotl-server /E /NP
+```powershell
+# From the axolotlmeasurement directory — run ONCE, or when requirements.txt changes
+powershell -ExecutionPolicy Bypass -File setup-python-runtime.ps1
 ```
 
-Use `--onedir` (not `--onefile`). The `--onefile` approach bundles everything into a single self-extracting exe that must decompress ~500MB of ML libraries to a temp folder on every launch — this routinely exceeds Electron's 30-second backend startup timeout, causing the backend to silently fail. `--onedir` pre-extracts everything so startup is near-instant.
+This downloads Python 3.12 embeddable, installs pip, and installs all packages from `src/backend/requirements.txt` into `resources/python-runtime/`. After it completes, run the Electron build normally:
 
-Build to `build/backend-dist/` first, then use `robocopy` to merge into `resources/axolotl-server/` — this preserves the `models/` subfolder that PyInstaller would otherwise delete.
+```bash
+npm run build:win
+```
 
-Place bundled `.pt` model files in `resources/axolotl-server/models/` before running the Electron build.
+`electron-builder` automatically copies:
+- `resources/python-runtime/` → embedded Python exe + all packages
+- `resources/python-backend/` → model files
+- `src/backend/main.py` and `src/backend/kp_est_01_results.py` → backend scripts
+
+Place `.pt` model files in `resources/python-backend/models/` before building.
 
 ## Code Style
 
@@ -104,9 +109,7 @@ All renderer↔main communication goes through `window.api` (typed as `AxolotlAP
 ### Backend: Dev vs Production
 
 - **Dev**: Backend is started manually with `npm run start-backend`. The Electron main process does NOT auto-start it (`if (!is.dev)` guard in `src/main/index.ts`).
-- **Production**: The Python backend is compiled to `axolotl-server.exe` via PyInstaller and bundled at `resources/axolotl-server/`. Electron auto-starts it at `app.whenReady()` and kills it on `before-quit`.
-
-**Critical — model path resolution**: The `spawn()` call in `src/main/index.ts` sets `cwd` to the `axolotl-server/` directory so the backend's working directory is correct. `main.py` uses `get_base_dir()` (which checks `sys.frozen` / `sys.executable`) to resolve the `models/` folder relative to the exe, not the process CWD. Both must stay consistent — never use `os.path.abspath(".")` or relative paths for model lookups in the backend.
+- **Production**: Electron spawns `resources/python-runtime/python.exe resources/python-backend/main.py` with `cwd` set to `resources/python-backend/`. `main.py`'s `get_base_dir()` returns `os.path.dirname(os.path.abspath(__file__))` = `python-backend/`, so models resolve to `python-backend/models/`. Never use `os.path.abspath(".")` or relative paths for model lookups in the backend.
 
 ### Custom Protocol
 
@@ -122,14 +125,22 @@ The renderer loads local image files via a custom `axolotl-file://` protocol (re
 - Debounced JSON storage saves (500ms) with atomic writes (temp file → rename)
 - Lazy-loaded Vue routes (except `InputView` which is eagerly loaded)
 - Backend runs on `http://localhost:8001`
-- ML model files placed in `src/backend/models/` (supports multiple, switchable via UI)
+- ML model files placed in `resources/python-backend/models/` for production, `src/backend/models/` for dev
 - Renderer can import types directly from `src/types` (configured in tsconfig); use `@renderer` alias for `src/renderer/src/`
 - To avoid Vue reactive proxy issues when sending data over IPC, serialize with `JSON.parse(JSON.stringify(data))` before calling `window.api`
 
 ## Backend Setup
 
+### Dev
 1. Python must be installed
-2. Place YOLOv8 `.pt` model file(s) in `src/backend/models/`
-3. Virtual environment created at `src/backend/venv/`
-4. `npm run start-backend` activates venv and starts FastAPI server
-5. App UI allows switching between available models via dropdown on Input page
+2. Create a venv: `cd src/backend && python -m venv venv`
+3. Place `.pt` model file(s) in `src/backend/models/`
+4. `npm run start-backend` activates the venv and starts the FastAPI server
+5. App UI allows switching between models via dropdown on Input page
+
+### Production build
+1. Run `powershell -ExecutionPolicy Bypass -File setup-python-runtime.ps1` once (or after `requirements.txt` changes) — creates `resources/python-runtime/`
+2. Place `.pt` model file(s) in `resources/python-backend/models/`
+3. Run `npm run build:win`
+
+**Why not PyInstaller?** PyTorch's DLL initialization (WinError 1114) is fundamentally broken in PyInstaller frozen mode on Windows — torch's `_load_dll_libraries()` calls `LoadLibraryExW` with restricted flags, and several core DLLs (c10.dll, torch_cpu.dll) fail to initialize in that context regardless of PATH or AddDllDirectory workarounds. The embedded Python approach runs Python normally (unfrozen), so torch DLL loading works exactly as in dev.

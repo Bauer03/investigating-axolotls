@@ -11,8 +11,17 @@ files:
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 extraResources:
-  - from: resources
-    to: resources
+  # Embedded Python runtime (created by setup-python-runtime.ps1)
+  - from: resources/python-runtime
+    to: resources/python-runtime
+  # Backend scripts + models
+  - from: resources/python-backend
+    to: resources/python-backend
+  # Copy main.py and kp_est_01_results.py from their source location
+  - from: src/backend/main.py
+    to: resources/python-backend/main.py
+  - from: src/backend/kp_est_01_results.py
+    to: resources/python-backend/kp_est_01_results.py
 win:
   executableName: InvestigatingAxolotls
   target:

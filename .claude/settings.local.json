@@ -6,7 +6,11 @@
       "Bash(echo:*)",
       "Bash(cmd /c \"cd /d \"\"C:\\\\Users\\\\paula\\\\Documents\\\\GitHub\\\\investigating-axolotls\\\\axolotlmeasurement\"\" && robocopy \"\"build\\\\backend-dist\\\\axolotl-server\"\" \"\"resources\\\\axolotl-server\"\" /E /NP\")",
       "Bash(npm run build:win:*)",
-      "Bash(cmd /c \"cd /d \"\"C:\\\\Users\\\\paula\\\\Documents\\\\GitHub\\\\investigating-axolotls\\\\axolotlmeasurement\"\" && robocopy \"\"build/backend-dist/axolotl-server\"\" \"\"resources/axolotl-server\"\" /E /NP\")"
+      "Bash(cmd /c \"cd /d \"\"C:\\\\Users\\\\paula\\\\Documents\\\\GitHub\\\\investigating-axolotls\\\\axolotlmeasurement\"\" && robocopy \"\"build/backend-dist/axolotl-server\"\" \"\"resources/axolotl-server\"\" /E /NP\")",
+      "Bash(src/backend/venv/Scripts/python:*)",
+      "Bash(powershell -Command \"robocopy ''C:\\\\Users\\\\paula\\\\Documents\\\\GitHub\\\\investigating-axolotls\\\\axolotlmeasurement\\\\build\\\\backend-dist\\\\axolotl-server'' ''C:\\\\Users\\\\paula\\\\Documents\\\\GitHub\\\\investigating-axolotls\\\\axolotlmeasurement\\\\resources\\\\axolotl-server'' /E /NP; exit 0\")",
+      "Bash(powershell -Command \"robocopy ''C:\\\\Users\\\\paula\\\\Documents\\\\GitHub\\\\investigating-axolotls\\\\axolotlmeasurement\\\\build\\\\backend-dist\\\\axolotl-server'' ''C:\\\\Users\\\\paula\\\\Documents\\\\GitHub\\\\investigating-axolotls\\\\axolotlmeasurement\\\\resources\\\\axolotl-server'' /E /NP /NFL /NDL; exit 0\")",
+      "Bash(powershell -ExecutionPolicy Bypass -File setup-python-runtime.ps1)"
     ]
   }
 }

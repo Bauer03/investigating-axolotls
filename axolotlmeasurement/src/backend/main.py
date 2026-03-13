@@ -1,6 +1,10 @@
 import os
 import sys
 
+# Embedded Python uses a ._pth file that suppresses the normal behavior of adding
+# the script's directory to sys.path. Add it explicitly so sibling modules are found.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 # PyInstaller + PyTorch on Windows: torch's DLLs (c10.dll etc.) won't load unless
 # their directory is explicitly added to the DLL search path before any torch import.
 # This must happen before the kp_est_01_results import that triggers torch loading.

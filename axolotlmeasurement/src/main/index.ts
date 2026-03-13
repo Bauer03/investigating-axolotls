@@ -23,21 +23,25 @@ let backendLogPath = ''
 
 function startBackend(): Promise<void> {
   return new Promise((resolve, reject) => {
-    const serverDir = join(process.resourcesPath, 'resources', 'axolotl-server')
-    const serverPath = join(serverDir, 'axolotl-server.exe')
+    const backendDir = join(process.resourcesPath, 'resources', 'python-backend')
+    const pythonExe = join(process.resourcesPath, 'resources', 'python-runtime', 'python.exe')
+    const scriptPath = join(backendDir, 'main.py')
     backendLogPath = join(app.getPath('userData'), 'backend.log')
     backendCrashed = false
 
-    // Write a header to the log so each run is easy to find
     const timestamp = new Date().toISOString()
-    fs.writeFileSync(backendLogPath, `=== Backend started ${timestamp} ===\nPath: ${serverPath}\n\n`)
+    fs.writeFileSync(
+      backendLogPath,
+      `=== Backend started ${timestamp} ===\nPython: ${pythonExe}\nScript: ${scriptPath}\n\n`
+    )
     const logStream = fs.createWriteStream(backendLogPath, { flags: 'a' })
 
-    console.log('[Backend] Starting server from:', serverPath)
+    console.log('[Backend] Python:', pythonExe)
+    console.log('[Backend] Script:', scriptPath)
     console.log('[Backend] Log file:', backendLogPath)
 
-    backendProcess = spawn(serverPath, [], {
-      cwd: serverDir,
+    backendProcess = spawn(pythonExe, [scriptPath], {
+      cwd: backendDir,
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true
     })
@@ -122,9 +126,11 @@ function stopBackend(): void {
 
 function createWindow(): void {
   // Create the browser window.
+  const { version } = require('../../package.json')
   const mainWindow = new BrowserWindow({
     width: 1000,
     height: 670,
+    title: `InvestigatingAxolotls v${version}`,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -224,7 +230,7 @@ app.whenReady().then(async () => {
     // In production, they live next to the bundled server executable
     const modelsPath = is.dev
       ? join(__dirname, '../../src/backend/models')
-      : join(process.resourcesPath, 'resources', 'axolotl-server', 'models')
+      : join(process.resourcesPath, 'resources', 'python-backend', 'models')
 
     // Create the folder if it doesn't exist yet so the user can see it
     if (!fs.existsSync(modelsPath)) {
