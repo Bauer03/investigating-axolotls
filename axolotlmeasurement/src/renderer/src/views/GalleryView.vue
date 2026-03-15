@@ -76,7 +76,7 @@
         </div>
       </div>
 
-      <div v-if="selectedImage?.measurements" class="glass-panel pd1 measurements-panel">
+      <div v-if="selectedImage?.measurements?.total_length != null" class="glass-panel pd1 measurements-panel">
         <span class="measurements-title txt-col">Measurements (px)</span>
         <div class="measurements-grid">
           <span class="txt-col">SVL (total)</span>

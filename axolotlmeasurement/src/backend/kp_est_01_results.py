@@ -36,6 +36,12 @@ def process_images(image_paths: list, model_path: str = "models/best.pt") -> lis
             results = model(image_path)
 
             for result in results:
+                if result.boxes and not result.keypoints:
+                    raise ValueError(
+                        f"The model returned bounding boxes but no keypoints for '{image_path.name}'. "
+                        "This model does not appear to be a pose estimation model. "
+                        "Please use a YOLOv8 pose model compatible with this app."
+                    )
                 if result.boxes and result.keypoints:
                     kp_list = []
                     measurements = {}

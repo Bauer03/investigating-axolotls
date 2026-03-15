@@ -234,18 +234,25 @@ async function startProcessing(): Promise<void> {
     paths = []
 
     if ('error' in res) {
-      throw new Error(res.error)
+      const detail = res.details ? `\n\n${res.details}` : ''
+      throw new Error(`${res.error}${detail}`)
     }
     console.log('Response from backend:', res)
     imageStore.bulkUpdateProcessedImages(res.data)
 
-    alert(`Processed ${fileCount} images in ${timeTaken.toFixed(2)} seconds.`)
-
-    // after images have been processed, I'm sending the user to validate view to verify changes
-    router.push('Validate')
+    if (res.data.length === 0) {
+      alert(
+        'The model ran but returned no results. The model may not be compatible with this app, or no axolotls were detected in the images.'
+      )
+    } else {
+      alert(`Processed ${fileCount} images in ${timeTaken.toFixed(2)} seconds.`)
+      // after images have been processed, I'm sending the user to validate view to verify changes
+      router.push('Validate')
+    }
   } catch (error) {
     console.error('Error processing images:', error)
-    alert('There was an error processing the images. Please check the console for more details.')
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    alert(`Error processing images:\n\n${message}`)
   } finally {
     isLoading.value = false
   }

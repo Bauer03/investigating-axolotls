@@ -5,6 +5,14 @@ import sys
 # the script's directory to sys.path. Add it explicitly so sibling modules are found.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Ensure embedded runtime's site-packages are in sys.path.
+# The ._pth patch handles this normally, but we add it explicitly as a fallback
+# in case the patch isn't applied or doesn't take effect.
+_exe_dir = os.path.dirname(sys.executable)
+_site_packages = os.path.join(_exe_dir, 'Lib', 'site-packages')
+if os.path.isdir(_site_packages) and _site_packages not in sys.path:
+    sys.path.insert(0, _site_packages)
+
 # PyInstaller + PyTorch on Windows: torch's DLLs (c10.dll etc.) won't load unless
 # their directory is explicitly added to the DLL search path before any torch import.
 # This must happen before the kp_est_01_results import that triggers torch loading.
