@@ -23,8 +23,8 @@ let backendLogPath = ''
 
 function startBackend(): Promise<void> {
   return new Promise((resolve, reject) => {
-    const backendDir = join(process.resourcesPath, 'resources', 'python-backend')
-    const pythonExe = join(process.resourcesPath, 'resources', 'python-runtime', 'python.exe')
+    const backendDir = join(process.resourcesPath, 'python-backend')
+    const pythonExe = join(process.resourcesPath, 'python-runtime', 'python.exe')
     const scriptPath = join(backendDir, 'main.py')
     backendLogPath = join(app.getPath('userData'), 'backend.log')
     backendCrashed = false
@@ -39,6 +39,17 @@ function startBackend(): Promise<void> {
     console.log('[Backend] Python:', pythonExe)
     console.log('[Backend] Script:', scriptPath)
     console.log('[Backend] Log file:', backendLogPath)
+
+    if (!fs.existsSync(pythonExe)) {
+      const msg =
+        `Python runtime not found at:\n${pythonExe}\n\n` +
+        `This is often caused by antivirus software quarantining the bundled Python executable. ` +
+        `Check your AV exclusions, or reinstall the app.\n\nLog: ${backendLogPath}`
+      dialog.showErrorBox('Backend startup failed', msg)
+      backendCrashed = true
+      resolve()
+      return
+    }
 
     backendProcess = spawn(pythonExe, [scriptPath], {
       cwd: backendDir,
@@ -230,7 +241,7 @@ app.whenReady().then(async () => {
     // In production, they live next to the bundled server executable
     const modelsPath = is.dev
       ? join(__dirname, '../../src/backend/models')
-      : join(process.resourcesPath, 'resources', 'python-backend', 'models')
+      : join(process.resourcesPath, 'python-backend', 'models')
 
     // Create the folder if it doesn't exist yet so the user can see it
     if (!fs.existsSync(modelsPath)) {

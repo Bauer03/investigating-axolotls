@@ -31,8 +31,11 @@ if (-not (Test-Path (Join-Path $RuntimeDir "python.exe"))) {
 $PthFile = Get-ChildItem $RuntimeDir -Filter "python*._pth" | Select-Object -First 1
 if ($PthFile) {
     $Content = Get-Content $PthFile.FullName
-    $Patched = $Content | ForEach-Object { $_ -replace '^#import site', 'import site' }
+    $Patched = $Content | ForEach-Object { $_ -replace '^#?import site', 'import site' }
     Set-Content $PthFile.FullName $Patched
+    if (-not (Get-Content $PthFile.FullName | Where-Object { $_ -eq 'import site' })) {
+        throw "Failed to patch $($PthFile.Name) - 'import site' not found after patch"
+    }
     Write-Host "Patched $($PthFile.Name) for site-packages."
 }
 

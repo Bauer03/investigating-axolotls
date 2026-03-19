@@ -13,15 +13,19 @@ files:
 extraResources:
   # Embedded Python runtime (created by setup-python-runtime.ps1)
   - from: resources/python-runtime
-    to: resources/python-runtime
+    to: python-runtime
   # Backend scripts + models
   - from: resources/python-backend
-    to: resources/python-backend
+    to: python-backend
   # Copy main.py and kp_est_01_results.py from their source location
   - from: src/backend/main.py
-    to: resources/python-backend/main.py
+    to: python-backend/main.py
   - from: src/backend/kp_est_01_results.py
-    to: resources/python-backend/kp_est_01_results.py
+    to: python-backend/kp_est_01_results.py
+mac:
+  target:
+    - dmg
+  identity: null # for other machines to  use this, i need apple dev certificate key i think... but unless mac is target that can wait.
 win:
   executableName: InvestigatingAxolotls
   target:
