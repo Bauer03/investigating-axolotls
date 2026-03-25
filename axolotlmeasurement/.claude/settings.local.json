@@ -6,7 +6,9 @@
       "Bash(\"C:\\\\Users\\\\paula\\\\Documents\\\\GitHub\\\\investigating-axolotls\\\\axolotlmeasurement\\\\src\\\\backend\\\\venv\\\\Scripts\\\\pyinstaller.exe\" --version)",
       "Bash(src/backend/venv/Scripts/pip install:*)",
       "Bash(src/backend/venv/Scripts/pyinstaller:*)",
-      "Bash(robocopy:*)"
+      "Bash(robocopy:*)",
+      "Bash(pip index:*)",
+      "Bash(pip install:*)"
     ]
   }
 }

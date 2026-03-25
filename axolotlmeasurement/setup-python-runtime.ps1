@@ -60,3 +60,4 @@ Write-Host "Installing requirements (this may take several minutes — PyTorch a
 Write-Host ""
 Write-Host "=== Done! Runtime ready at: $RuntimeDir ==="
 Write-Host "You can now run: npm run build:win"
+Write-Host "If this doesn't work, please contact Paul :)"
