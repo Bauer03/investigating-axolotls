@@ -76,19 +76,32 @@
         </div>
       </div>
 
-      <div v-if="selectedImage?.measurements?.total_length != null" class="glass-panel pd1 measurements-panel">
+      <div
+        v-if="selectedImage?.measurements?.total_length != null"
+        class="glass-panel pd1 measurements-panel"
+      >
         <span class="measurements-title txt-col">Measurements (px)</span>
         <div class="measurements-grid">
           <span class="txt-col">SVL (total)</span>
-          <span class="measurement-value">{{ selectedImage.measurements.total_length.toFixed(1) }}</span>
+          <span class="measurement-value">{{
+            selectedImage.measurements.total_length.toFixed(1)
+          }}</span>
           <span class="txt-col">Head → midU</span>
-          <span class="measurement-value">{{ selectedImage.measurements.head_to_midU.toFixed(1) }}</span>
+          <span class="measurement-value">{{
+            selectedImage.measurements.head_to_midU.toFixed(1)
+          }}</span>
           <span class="txt-col">midU → midL</span>
-          <span class="measurement-value">{{ selectedImage.measurements.midU_to_midL.toFixed(1) }}</span>
+          <span class="measurement-value">{{
+            selectedImage.measurements.midU_to_midL.toFixed(1)
+          }}</span>
           <span class="txt-col">midL → legs</span>
-          <span class="measurement-value">{{ selectedImage.measurements.midL_to_legs_midpoint.toFixed(1) }}</span>
+          <span class="measurement-value">{{
+            selectedImage.measurements.midL_to_legs_midpoint.toFixed(1)
+          }}</span>
           <span class="txt-col">legs → Tail</span>
-          <span class="measurement-value">{{ selectedImage.measurements.legs_midpoint_to_tail.toFixed(1) }}</span>
+          <span class="measurement-value">{{
+            selectedImage.measurements.legs_midpoint_to_tail.toFixed(1)
+          }}</span>
         </div>
       </div>
     </div>
@@ -238,7 +251,15 @@ const deleteSingleImage = (image: ImageFile | null): void => {
 const downloadAllKeypointData = async (): Promise<void> => {
   isDropdownOpen.value = false
 
-  const headers = ['Model', 'Image', 'SVL (px)', 'Head-midU (px)', 'midU-midL (px)', 'midL-legs (px)', 'legs-Tail (px)']
+  const headers = [
+    'Model',
+    'Image',
+    'SVL (px)',
+    'Head-midU (px)',
+    'midU-midL (px)',
+    'midL-legs (px)',
+    'legs-Tail (px)'
+  ]
 
   const rows = galleryImages.value.map((image) => {
     const m = image.measurements
@@ -249,7 +270,7 @@ const downloadAllKeypointData = async (): Promise<void> => {
       m ? m.head_to_midU.toFixed(2) : '',
       m ? m.midU_to_midL.toFixed(2) : '',
       m ? m.midL_to_legs_midpoint.toFixed(2) : '',
-      m ? m.legs_midpoint_to_tail.toFixed(2) : '',
+      m ? m.legs_midpoint_to_tail.toFixed(2) : ''
     ].join(',')
   })
 
@@ -344,7 +365,7 @@ async function downloadImage(image: ImageFile | null): Promise<void> {
 const copyData = async (image: ImageFile | null): Promise<void> => {
   if (!image) return
 
-  const headers = ['Model', 'Image', 'SVL (px)', 'Head-midU (px)', 'midU-midL (px)', 'midL-legs (px)', 'legs-Tail (px)']
+  const headers = ['Model', 'Image', 'Total length (px):', 'Total length (mm)'] // tweaking to only give one measurement in px and inches, instead of sum of parts.
   const m = image.measurements
   const values = [
     image.modelName ?? '',
@@ -353,7 +374,7 @@ const copyData = async (image: ImageFile | null): Promise<void> => {
     m ? m.head_to_midU.toFixed(2) : '',
     m ? m.midU_to_midL.toFixed(2) : '',
     m ? m.midL_to_legs_midpoint.toFixed(2) : '',
-    m ? m.legs_midpoint_to_tail.toFixed(2) : '',
+    m ? m.legs_midpoint_to_tail.toFixed(2) : ''
   ]
 
   const csv = [headers.join('\t'), values.join('\t')].join('\n')
