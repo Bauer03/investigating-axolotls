@@ -8,7 +8,10 @@
       "Bash(src/backend/venv/Scripts/pyinstaller:*)",
       "Bash(robocopy:*)",
       "Bash(pip index:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(xargs grep:*)",
+      "Bash(npm run:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File setup-python-runtime.ps1)"
     ]
   }
 }

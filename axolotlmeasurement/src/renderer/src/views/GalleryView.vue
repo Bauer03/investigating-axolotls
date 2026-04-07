@@ -80,28 +80,14 @@
         v-if="selectedImage?.measurements?.total_length != null"
         class="glass-panel pd1 measurements-panel"
       >
-        <span class="measurements-title txt-col">Measurements (px)</span>
+        <span class="measurements-title txt-col">Measurements</span>
         <div class="measurements-grid">
-          <span class="txt-col">SVL (total)</span>
+          <span class="txt-col">Total (px)</span>
           <span class="measurement-value">{{
             selectedImage.measurements.total_length.toFixed(1)
           }}</span>
-          <span class="txt-col">Head → midU</span>
-          <span class="measurement-value">{{
-            selectedImage.measurements.head_to_midU.toFixed(1)
-          }}</span>
-          <span class="txt-col">midU → midL</span>
-          <span class="measurement-value">{{
-            selectedImage.measurements.midU_to_midL.toFixed(1)
-          }}</span>
-          <span class="txt-col">midL → legs</span>
-          <span class="measurement-value">{{
-            selectedImage.measurements.midL_to_legs_midpoint.toFixed(1)
-          }}</span>
-          <span class="txt-col">legs → Tail</span>
-          <span class="measurement-value">{{
-            selectedImage.measurements.legs_midpoint_to_tail.toFixed(1)
-          }}</span>
+          <span class="txt-col">Total (inches)</span>
+          <span class="measurement-value">WIP</span>
         </div>
       </div>
     </div>
@@ -110,14 +96,20 @@
   <div v-if="fullscreenImage" class="fullscreen-modal" @click.self="closeFullscreen">
     <div class="fullscreen-content">
       <KeypointDisplay
+        ref="galleryKeypointRef"
         v-if="fullscreenImage"
         v-model:keypoints="editedKeypoints"
         :image-src="fullscreenImage.inputPath"
         :is-editable="true"
         class="fullscreen-image"
+        @zoom-changed="isGalleryZoomed = $event"
       />
 
-      <div class="fullscreen-buttons flx gp1 jc-end">
+      <div class="fullscreen-buttons flx gp1 jc-end al-c">
+        <span v-if="!isGalleryZoomed" class="zoom-hint">Click a keypoint to zoom</span>
+        <button v-if="isGalleryZoomed" class="discreet-btn" @click="handleGalleryResetZoom">
+          Reset Zoom
+        </button>
         <button class="discreet-btn" @click="closeFullscreen">Cancel</button>
         <button class="accent-btn" @click="saveAndCloseFullscreen">Save and Close</button>
       </div>
@@ -133,6 +125,13 @@ import { ImageFile, Keypoint } from 'src/types'
 import KeypointDisplay from '../components/KeypointDisplay.vue'
 
 const imageStore = useImageStore()
+const galleryKeypointRef = ref<InstanceType<typeof KeypointDisplay> | null>(null)
+const isGalleryZoomed = ref(false)
+
+function handleGalleryResetZoom(): void {
+  galleryKeypointRef.value?.resetZoom()
+  isGalleryZoomed.value = false
+}
 const galleryImages = computed(() => imageStore.galleryList)
 const selectedImage = computed(() => imageStore.selectedGalleryImage)
 const isDownloadingAll = ref(false)
@@ -144,6 +143,22 @@ const toggleDropdown = (): void => {
 onClickOutside(dropdownRef, () => {
   isDropdownOpen.value = false
 })
+
+function drawPin(ctx: CanvasRenderingContext2D, x: number, y: number, size = 20): void {
+  const r = size / 2
+  const h = size * 1.5
+  ctx.beginPath()
+  ctx.arc(x, y - h + r, r, Math.PI, 0) // circular top
+  ctx.lineTo(x + r * 0.3, y - r) // right side narrowing to tip
+  ctx.lineTo(x, y) // tip
+  ctx.lineTo(x - r * 0.3, y - r) // left side
+  ctx.closePath()
+  ctx.fillStyle = 'hsla(160, 100%, 37%, 0.85)'
+  ctx.fill()
+  ctx.strokeStyle = 'white'
+  ctx.lineWidth = 2
+  ctx.stroke()
+}
 
 const downloadAllImages = async (): Promise<void> => {
   if (isDownloadingAll.value || imageStore.imageList.length === 0) return
@@ -181,13 +196,7 @@ const downloadAllImages = async (): Promise<void> => {
           // Draw keypoints
           if (image.keypoints) {
             image.keypoints.forEach((kp) => {
-              ctx.beginPath()
-              ctx.arc(kp.x, kp.y, 10, 0, 2 * Math.PI)
-              ctx.fillStyle = 'hsla(160, 100%, 37%, 0.75)'
-              ctx.fill()
-              ctx.strokeStyle = 'white'
-              ctx.lineWidth = 2
-              ctx.stroke()
+              drawPin(ctx, kp.x, kp.y)
             })
           }
 
@@ -251,15 +260,7 @@ const deleteSingleImage = (image: ImageFile | null): void => {
 const downloadAllKeypointData = async (): Promise<void> => {
   isDropdownOpen.value = false
 
-  const headers = [
-    'Model',
-    'Image',
-    'SVL (px)',
-    'Head-midU (px)',
-    'midU-midL (px)',
-    'midL-legs (px)',
-    'legs-Tail (px)'
-  ]
+  const headers = ['Model', 'Image', 'Total (px)', 'Total (inches)']
 
   const rows = galleryImages.value.map((image) => {
     const m = image.measurements
@@ -267,10 +268,7 @@ const downloadAllKeypointData = async (): Promise<void> => {
       `"${image.modelName ?? ''}"`,
       `"${image.name}"`,
       m ? m.total_length.toFixed(2) : '',
-      m ? m.head_to_midU.toFixed(2) : '',
-      m ? m.midU_to_midL.toFixed(2) : '',
-      m ? m.midL_to_legs_midpoint.toFixed(2) : '',
-      m ? m.legs_midpoint_to_tail.toFixed(2) : ''
+      'WIP'
     ].join(',')
   })
 
@@ -365,17 +363,9 @@ async function downloadImage(image: ImageFile | null): Promise<void> {
 const copyData = async (image: ImageFile | null): Promise<void> => {
   if (!image) return
 
-  const headers = ['Model', 'Image', 'Total length (px):', 'Total length (mm)'] // tweaking to only give one measurement in px and inches, instead of sum of parts.
+  const headers = ['Model', 'Image', 'Total (px)', 'Total (inches)']
   const m = image.measurements
-  const values = [
-    image.modelName ?? '',
-    image.name,
-    m ? m.total_length.toFixed(2) : '',
-    m ? m.head_to_midU.toFixed(2) : '',
-    m ? m.midU_to_midL.toFixed(2) : '',
-    m ? m.midL_to_legs_midpoint.toFixed(2) : '',
-    m ? m.legs_midpoint_to_tail.toFixed(2) : ''
-  ]
+  const values = [image.modelName ?? '', image.name, m ? m.total_length.toFixed(2) : '', 'WIP']
 
   const csv = [headers.join('\t'), values.join('\t')].join('\n')
   await navigator.clipboard.writeText(csv)
@@ -392,6 +382,8 @@ function openFullscreen(image: ImageFile): void {
 }
 
 function closeFullscreen(): void {
+  galleryKeypointRef.value?.resetZoom()
+  isGalleryZoomed.value = false
   fullscreenImage.value = null
   editedKeypoints.value = []
 }
@@ -545,8 +537,14 @@ onMounted(() => {
 }
 .fullscreen-buttons {
   padding: var(--sp1);
-  background-color: var(--bg-col);
+  background-color: rgba(52, 37, 59, 0.5);
   border-radius: var(--br);
+}
+
+.zoom-hint {
+  font-size: 14px;
+  opacity: 0.75;
+  margin-right: auto;
 }
 
 .measurements-panel {

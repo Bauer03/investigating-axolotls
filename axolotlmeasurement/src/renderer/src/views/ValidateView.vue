@@ -46,7 +46,7 @@
         />
       </div>
 
-      <div class="glass-panel pd1">
+      <div class="glass-panel pd1 controls-panel">
         <div class="validation-controls flx gp1 jc-end">
           <button class="discreet-btn flx gp05 al-c" @click="editKeypoints(selectedImage)">
             <span class="material-icons-outlined">edit</span>
@@ -64,13 +64,17 @@
   <div v-if="fullscreenImage" class="fullscreen-modal" @click.self="closeFullscreen">
     <div class="fullscreen-content">
       <KeypointDisplay
+        ref="keypointRef"
         v-if="fullscreenImage"
         v-model:keypoints="editedKeypoints"
         :image-src="fullscreenImage.inputPath"
         :is-editable="true"
         class="fullscreen-image"
+        @zoom-changed="isZoomed = $event"
       />
-      <div class="fullscreen-buttons flx gp1 jc-end">
+      <div class="fullscreen-buttons flx gp1 jc-end al-c">
+        <span v-if="!isZoomed" class="zoom-hint">Click a keypoint to zoom</span>
+        <button v-if="isZoomed" class="discreet-btn" @click="handleResetZoom">Reset Zoom</button>
         <button class="discreet-btn" @click="closeFullscreen">Cancel</button>
         <button class="accent-btn" @click="saveAndCloseFullscreen">Save and Close</button>
       </div>
@@ -84,6 +88,14 @@ import { computed, ComputedRef, onMounted, ref, Ref } from 'vue'
 import router from '@renderer/router'
 import { ImageFile, Keypoint } from 'src/types'
 import KeypointDisplay from '../components/KeypointDisplay.vue'
+
+const keypointRef = ref<InstanceType<typeof KeypointDisplay> | null>(null)
+const isZoomed = ref(false)
+
+function handleResetZoom(): void {
+  keypointRef.value?.resetZoom()
+  isZoomed.value = false
+}
 const headertext: ComputedRef<string> = computed(() => {
   return (
     'Validating ' +
@@ -147,6 +159,8 @@ function openFullscreen(image: ImageFile): void {
 }
 
 function closeFullscreen(): void {
+  keypointRef.value?.resetZoom()
+  isZoomed.value = false
   fullscreenImage.value = null
   editedKeypoints.value = []
 }
@@ -199,9 +213,14 @@ onMounted(() => {
   color: #cc0000;
 }
 .glass-preview {
-  align-self: flex-start;
-  flex-shrink: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
   max-width: 100%;
+}
+
+.controls-panel {
+  flex-shrink: 0;
 }
 .validate-right {
   flex-grow: 1;
@@ -271,7 +290,13 @@ onMounted(() => {
 
 .fullscreen-buttons {
   padding: var(--sp1);
-  background-color: var(--bg-col);
+  background-color: rgba(52, 37, 59, 0.5);
   border-radius: var(--br);
+}
+
+.zoom-hint {
+  font-size: 14px;
+  opacity: 0.75;
+  margin-right: auto;
 }
 </style>

@@ -51,7 +51,7 @@ if (-not (Test-Path $PipExe)) {
 }
 
 # 4. Install project requirements
-Write-Host "Installing requirements (this may take several minutes — PyTorch alone is ~2 GB)..."
+Write-Host "Installing requirements (this may take several minutes - PyTorch alone is ~2 GB)..."
 & (Join-Path $RuntimeDir "python.exe") -m pip install `
     -r $ReqFile `
     --no-warn-script-location `

@@ -1,5 +1,5 @@
 <template>
-  <div class="keypoint-container">
+  <div class="keypoint-container" :style="containerZoomStyle">
     <img
       ref="imageRef"
       :src="safeImageSrc"
@@ -10,11 +10,25 @@
     <div
       v-for="(point, index) in scaledKeypoints"
       :key="index"
-      class="keypoint-dot"
-      :class="{ editable: isEditable }"
+      class="keypoint-wrapper"
       :style="{ left: `${point.x}px`, top: `${point.y}px` }"
-      @mousedown="startDrag($event, index)"
     >
+      <svg
+        class="keypoint-pin"
+        :class="{ editable: isEditable }"
+        width="8"
+        height="12"
+        viewBox="0 0 16 24"
+        xmlns="http://www.w3.org/2000/svg"
+        @mousedown="startDrag($event, index)"
+      >
+        <path
+          d="M8 23 C4 18 0 14 0 8 A8 8 0 0 1 16 8 C16 14 12 18 8 23 Z"
+          fill="hsla(160, 100%, 37%, 0.85)"
+          stroke="white"
+          stroke-width="1.5"
+        />
+      </svg>
       <span class="keypoint-label">{{ point.name }}</span>
     </div>
   </div>
@@ -42,7 +56,7 @@ const safeImageSrc = computed(() => {
   return 'axolotl-file://' + normalized.split('/').map(encodeURIComponent).join('/')
 })
 
-const emit = defineEmits(['update:keypoints']) // Define the event we will emit
+const emit = defineEmits(['update:keypoints', 'zoom-changed'])
 
 const imageRef = ref<HTMLImageElement | null>(null)
 const displayedWidth = ref(0)
@@ -52,6 +66,29 @@ const naturalHeight = ref(0)
 
 // State for dragging logic
 const draggingIndex = ref<number | null>(null)
+const lastMouseX = ref(0)
+const lastMouseY = ref(0)
+
+// Zoom state
+const zoomActive = ref(false)
+const zoomScale = 2
+const zoomOriginX = ref(50) // % within container
+const zoomOriginY = ref(50)
+
+const containerZoomStyle = computed(() => {
+  if (!zoomActive.value) return {}
+  return {
+    transform: `scale(${zoomScale})`,
+    transformOrigin: `${zoomOriginX.value}% ${zoomOriginY.value}%`
+  }
+})
+
+function resetZoom(): void {
+  zoomActive.value = false
+  emit('zoom-changed', false)
+}
+
+defineExpose({ resetZoom })
 
 const updateImageDimensions = (): void => {
   if (imageRef.value) {
@@ -85,6 +122,20 @@ function startDrag(event: MouseEvent, index: number): void {
   if (!props.isEditable) return
   event.preventDefault()
   draggingIndex.value = index
+
+  // Activate zoom centered on the clicked keypoint (only on first click)
+  if (!zoomActive.value) {
+    const kp = scaledKeypoints.value[index]
+    zoomOriginX.value = displayedWidth.value > 0 ? (kp.x / displayedWidth.value) * 100 : 50
+    zoomOriginY.value = displayedHeight.value > 0 ? (kp.y / displayedHeight.value) * 100 : 50
+    zoomActive.value = true
+    emit('zoom-changed', true)
+  }
+
+  // Record starting mouse position for delta-based dragging (avoids snap-to-cursor)
+  lastMouseX.value = event.clientX
+  lastMouseY.value = event.clientY
+
   window.addEventListener('mousemove', onDrag)
   window.addEventListener('mouseup', stopDrag)
 }
@@ -94,17 +145,19 @@ function onDrag(event: MouseEvent): void {
 
   const rect = imageRef.value.getBoundingClientRect()
 
-  // Mouse position relative to the displayed image
-  const mouseX = event.clientX - rect.left
-  const mouseY = event.clientY - rect.top
+  // Use delta from last position so the keypoint moves with the cursor without snapping
+  const dx = event.clientX - lastMouseX.value
+  const dy = event.clientY - lastMouseY.value
+  lastMouseX.value = event.clientX
+  lastMouseY.value = event.clientY
 
-  // Convert mouse position back to the original image's scale
-  let newX = mouseX / scaleX.value
-  let newY = mouseY / scaleY.value
+  // Convert screen-pixel delta to natural image coords (rect.width accounts for CSS zoom)
+  const naturalDx = (dx / rect.width) * naturalWidth.value
+  const naturalDy = (dy / rect.height) * naturalHeight.value
 
-  // Clamp the values to stay within the image boundaries
-  newX = Math.max(0, Math.min(newX, naturalWidth.value))
-  newY = Math.max(0, Math.min(newY, naturalHeight.value))
+  const kp = props.keypoints[draggingIndex.value]
+  let newX = Math.max(0, Math.min(kp.x + naturalDx, naturalWidth.value))
+  let newY = Math.max(0, Math.min(kp.y + naturalDy, naturalHeight.value))
 
   // Create a new keypoints array with the updated position
   const newKeypoints = [...props.keypoints]
@@ -157,36 +210,36 @@ onUnmounted(() => {
   opacity: 0.8;
 }
 
-.keypoint-dot {
+.keypoint-wrapper {
   position: absolute;
-  width: 12px;
-  height: 12px;
-  background-color: hsla(160, 100%, 37%, 0.75);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  border: 1px solid white;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-  pointer-events: none; /* non-interactive by default*/
+  transform: translate(-50%, -100%); /* tip (bottom-center of SVG) sits at coordinate */
+  pointer-events: none;
+}
+
+.keypoint-pin {
+  display: block;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.5));
+  pointer-events: none;
 }
 
 /* active when dots are editable */
-.keypoint-dot.editable {
-  pointer-events: auto; /*clickable */
+.keypoint-pin.editable {
+  pointer-events: auto;
   cursor: grab;
 }
 
-.keypoint-dot.editable:active {
+.keypoint-pin.editable:active {
   cursor: grabbing;
 }
 
 .keypoint-label {
   position: absolute;
-  top: -20px;
+  bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
   background-color: rgba(0, 0, 0, 0.7);
   color: white;
-  padding: 2px 5px;
+  padding: 7px 6px;
   border-radius: 3px;
   font-size: 10px;
   white-space: nowrap;
