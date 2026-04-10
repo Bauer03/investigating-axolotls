@@ -144,20 +144,54 @@ onClickOutside(dropdownRef, () => {
   isDropdownOpen.value = false
 })
 
-function drawPin(ctx: CanvasRenderingContext2D, x: number, y: number, size = 20): void {
-  const r = size / 2
-  const h = size * 1.5
-  ctx.beginPath()
-  ctx.arc(x, y - h + r, r, Math.PI, 0) // circular top
-  ctx.lineTo(x + r * 0.3, y - r) // right side narrowing to tip
-  ctx.lineTo(x, y) // tip
-  ctx.lineTo(x - r * 0.3, y - r) // left side
-  ctx.closePath()
+function drawPin(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  imageHeight: number,
+  label?: string
+): void {
+  // Same SVG path used by KeypointDisplay.vue, viewBox 0 0 16 24, tip at (8, 23)
+  const svgPath = 'M8 23 C4 18 0 14 0 8 A8 8 0 0 1 16 8 C16 14 12 18 8 23 Z'
+  const pinHeight = Math.max(16, imageHeight / 50)
+  const scale = pinHeight / 24 // viewBox height is 24
+
+  ctx.save()
+  ctx.translate(x - 8 * scale, y - 23 * scale) // place SVG tip (8,23) at canvas (x,y)
+  ctx.scale(scale, scale)
+
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'
+  ctx.shadowBlur = 3
+
+  const path = new Path2D(svgPath)
   ctx.fillStyle = 'hsla(160, 100%, 37%, 0.85)'
-  ctx.fill()
+  ctx.fill(path)
+
+  ctx.shadowBlur = 0
   ctx.strokeStyle = 'white'
-  ctx.lineWidth = 2
-  ctx.stroke()
+  ctx.lineWidth = 1.5
+  ctx.stroke(path)
+
+  ctx.restore()
+
+  // Label above the pin, matching the keypoint-label style in KeypointDisplay.vue
+  if (label) {
+    const fontSize = Math.max(10, imageHeight / 80)
+    ctx.font = `${fontSize}px sans-serif`
+    const textWidth = ctx.measureText(label).width
+    const padX = Math.max(6, imageHeight / 200)
+    const padY = Math.max(5, imageHeight / 250)
+    const boxW = textWidth + padX * 2
+    const boxH = fontSize + padY * 2
+    const boxX = x - boxW / 2
+    const boxY = y - pinHeight - 4 - boxH
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+    ctx.fillRect(boxX, boxY, boxW, boxH)
+
+    ctx.fillStyle = 'white'
+    ctx.fillText(label, boxX + padX, boxY + padY + fontSize * 0.85)
+  }
 }
 
 const downloadAllImages = async (): Promise<void> => {
@@ -196,7 +230,7 @@ const downloadAllImages = async (): Promise<void> => {
           // Draw keypoints
           if (image.keypoints) {
             image.keypoints.forEach((kp) => {
-              drawPin(ctx, kp.x, kp.y)
+              drawPin(ctx, kp.x, kp.y, img.naturalHeight, kp.name)
             })
           }
 
@@ -310,13 +344,7 @@ async function downloadImage(image: ImageFile | null): Promise<void> {
         // Draw keypoints
         if (image.keypoints && image.keypoints.length > 0) {
           image.keypoints.forEach((kp) => {
-            ctx.beginPath()
-            ctx.arc(kp.x, kp.y, 10, 0, 2 * Math.PI)
-            ctx.fillStyle = 'hsla(160, 100%, 37%, 0.75)'
-            ctx.fill()
-            ctx.strokeStyle = 'white'
-            ctx.lineWidth = 2
-            ctx.stroke()
+            drawPin(ctx, kp.x, kp.y, img.naturalHeight, kp.name)
           })
         }
 

@@ -11,7 +11,9 @@
       "Bash(pip install:*)",
       "Bash(xargs grep:*)",
       "Bash(npm run:*)",
-      "Bash(powershell -ExecutionPolicy Bypass -File setup-python-runtime.ps1)"
+      "Bash(powershell -ExecutionPolicy Bypass -File setup-python-runtime.ps1)",
+      "Bash(chmod:*)",
+      "Bash(bash setup-python-runtime.sh 2>&1)"
     ]
   }
 }

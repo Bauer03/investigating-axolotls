@@ -24,7 +24,10 @@ let backendLogPath = ''
 function startBackend(): Promise<void> {
   return new Promise((resolve, reject) => {
     const backendDir = join(process.resourcesPath, 'python-backend')
-    const pythonExe = join(process.resourcesPath, 'python-runtime', 'python.exe')
+    const pythonExe =
+      process.platform === 'win32'
+        ? join(process.resourcesPath, 'python-runtime', 'python.exe')
+        : join(process.resourcesPath, 'python-runtime', 'bin', 'python3')
     const scriptPath = join(backendDir, 'main.py')
     backendLogPath = join(app.getPath('userData'), 'backend.log')
     backendCrashed = false

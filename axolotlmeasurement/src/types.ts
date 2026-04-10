@@ -19,7 +19,7 @@ export interface Measurements {
   total_length: number // SVL (snout-vent length proxy)
 }
 
-// The main structure for an image in your application
+
 // Everything lives directly on this object - no nested "data" property
 export interface ImageFile {
   inputPath: string // Full file path to the original image
