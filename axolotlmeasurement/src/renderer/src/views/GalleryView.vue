@@ -86,7 +86,7 @@
           <span class="measurement-value">{{
             selectedImage.measurements.total_length.toFixed(1)
           }}</span>
-          <span class="txt-col">Total (inches)</span>
+          <span class="txt-col">Total (mm)</span>
           <span class="measurement-value">WIP</span>
         </div>
       </div>
@@ -294,7 +294,7 @@ const deleteSingleImage = (image: ImageFile | null): void => {
 const downloadAllKeypointData = async (): Promise<void> => {
   isDropdownOpen.value = false
 
-  const headers = ['Model', 'Image', 'Total (px)', 'Total (inches)']
+  const headers = ['Model', 'Image', 'Total (px)', 'Total (mm)']
 
   const rows = galleryImages.value.map((image) => {
     const m = image.measurements
@@ -391,7 +391,7 @@ async function downloadImage(image: ImageFile | null): Promise<void> {
 const copyData = async (image: ImageFile | null): Promise<void> => {
   if (!image) return
 
-  const headers = ['Model', 'Image', 'Total (px)', 'Total (inches)']
+  const headers = ['Model', 'Image', 'Total (px)', 'Total (mm)']
   const m = image.measurements
   const values = [image.modelName ?? '', image.name, m ? m.total_length.toFixed(2) : '', 'WIP']
 
@@ -547,6 +547,7 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.7);
+  /* this is probably going to be changed at some point in the future. Making this shortly. */
   display: flex;
   justify-content: center;
   align-items: center;

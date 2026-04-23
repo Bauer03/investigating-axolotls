@@ -109,7 +109,7 @@ def process_images(image_paths: list, model_path: str = "models/best.pt") -> lis
     return all_results
 
 
-# Keep CLI usage for standalone testing/debugging
+# CLI usage for standalone testing/debugging
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', default='models/best.pt', help='Path to .pt model file')

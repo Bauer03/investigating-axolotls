@@ -83,7 +83,7 @@ export const useImageStore = defineStore('imageStore', () => {
           error !== null &&
           'message' in error &&
           typeof (error as { message?: string }).message === 'string' &&
-          (error as { message?: string }).message?.includes('UNIQUE constraint failed')
+          (error as { message?: string }).message?.includes('already exists')
         ) {
           console.log(`Image ${file.inputPath} already exists, skipping.`)
         } else {
@@ -133,8 +133,8 @@ export const useImageStore = defineStore('imageStore', () => {
     if (success) {
       imageList.value = imageList.value.filter((image) => image.inputPath !== pathToRemove)
     }
-    selectedValidationImagePath.value = validationList.value[0].inputPath
-    selectedGalleryImagePath.value = galleryList.value[0].inputPath
+    selectedValidationImagePath.value = validationList.value[0]?.inputPath ?? null
+    selectedGalleryImagePath.value = galleryList.value[0]?.inputPath ?? null
   }
 
   async function clearAllInputImages(): Promise<void> {

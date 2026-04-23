@@ -22,11 +22,7 @@
         >
           <span class="material-icons-outlined icon">refresh</span>
         </button>
-        <button
-          class="discreet-btn flx al-c"
-          title="Open models folder"
-          @click="openModelsFolder"
-        >
+        <button class="discreet-btn flx al-c" title="Open models folder" @click="openModelsFolder">
           <span class="material-icons-outlined icon">folder_open</span>
         </button>
       </div>
@@ -172,7 +168,7 @@ async function requestFileDialog(type: fileOptions): Promise<void> {
 
 // This function is only triggered on attempt at file upload
 async function readSelectedFiles(selectedPaths: string[]): Promise<void> {
-  const existingPaths = new Set(imagesToProcess.value.map((image) => image.inputPath))
+  const existingPaths = new Set(imageStore.imageList.map((image) => image.inputPath))
   const newPaths = selectedPaths.filter((path) => !existingPaths.has(path))
 
   if (newPaths.length === 0) {
@@ -238,7 +234,7 @@ async function startProcessing(): Promise<void> {
       throw new Error(`${res.error}${detail}`)
     }
     console.log('Response from backend:', res)
-    imageStore.bulkUpdateProcessedImages(res.data)
+    await imageStore.bulkUpdateProcessedImages(res.data)
 
     if (res.data.length === 0) {
       alert(

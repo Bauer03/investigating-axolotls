@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { promises as fs } from 'fs'
 import { electronAPI } from '@electron-toolkit/preload'
-import { fileOptions, AxolotlAPI, AxoData, ProcessError, ProcessSuccess } from '../types'
+import { fileOptions, AxolotlAPI, ProcessError, ProcessSuccess } from '../types'
 
 const api: AxolotlAPI = {
   getDBImages: () => ipcRenderer.invoke('db:get-all-images'),
@@ -47,11 +47,10 @@ const api: AxolotlAPI = {
       model?: string
     ): Promise<ProcessSuccess | ProcessError> => {
       try {
-        const result: AxoData[] = await ipcRenderer.invoke('process-images', paths, model)
-        return { message: 'Images processed successfully', data: result } as ProcessSuccess
+        const result = await ipcRenderer.invoke('process-images', paths, model)
+        return result as ProcessSuccess | ProcessError
       } catch (error) {
         return {
-          success: false,
           error: error instanceof Error ? error.message : String(error)
         } as ProcessError
       }

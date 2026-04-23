@@ -3,7 +3,7 @@ import { ChildProcess, spawn } from 'child_process'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { DeletionCriteria, ImageFile, AxoData, fileOptions } from '../types'
+import { DeletionCriteria, ImageFile, fileOptions } from '../types'
 import fetch from 'node-fetch'
 import fs from 'fs'
 import { crc32 } from 'zlib'
@@ -323,7 +323,7 @@ app.whenReady().then(async () => {
 
       const data = await response.json()
       console.log('Response from backend:', data)
-      return data.data as AxoData
+      return data
     } catch (error) {
       console.error('Error processing images:', error)
       return { error: 'Failed to process images' }
