@@ -56,7 +56,7 @@ This folder is gitignored (it's large). Any developer or CI environment needs to
 
 ### Step 2 — Place model files
 
-Place any `.pt` model files you want bundled into `resources/python-backend/models/`. These will be included in the installer. (`6kp.pt` and `best.pt` are already there.)
+Place any `.pt` model files you want bundled into `resources/python-backend/models/`. These will be included in the installer.
 
 Note: model files are gitignored (`*.pt` in `.gitignore`), so they must be added manually to this folder on each machine.
 

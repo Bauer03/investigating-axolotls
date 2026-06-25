@@ -112,6 +112,12 @@
         </button>
         <button class="discreet-btn" @click="closeFullscreen">Cancel</button>
         <button class="accent-btn" @click="saveAndCloseFullscreen">Save and Close</button>
+        <button class="discreet-btn" @click="handleZoomIn">
+          Zoom in <span class="material-icons-outlined">add</span>
+        </button>
+        <button class="discreet-btn" @click="handleZoomOut">
+          Zoom out <span class="material-icons-outlined">remove</span>
+        </button>
       </div>
     </div>
   </div>
@@ -123,6 +129,13 @@ import { computed, onMounted, ref, Ref } from 'vue'
 import { onClickOutside } from '@vueuse/core'
 import { ImageFile, Keypoint } from 'src/types'
 import KeypointDisplay from '../components/KeypointDisplay.vue'
+
+function handleZoomIn(): void {
+  alert('zooming in')
+}
+function handleZoomOut(): void {
+  alert('zooming out')
+}
 
 const imageStore = useImageStore()
 const galleryKeypointRef = ref<InstanceType<typeof KeypointDisplay> | null>(null)

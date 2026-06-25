@@ -64,8 +64,8 @@
   <div v-if="fullscreenImage" class="fullscreen-modal" @click.self="closeFullscreen">
     <div class="fullscreen-content">
       <KeypointDisplay
-        ref="keypointRef"
         v-if="fullscreenImage"
+        ref="keypointRef"
         v-model:keypoints="editedKeypoints"
         :image-src="fullscreenImage.inputPath"
         :is-editable="true"
@@ -77,6 +77,12 @@
         <button v-if="isZoomed" class="discreet-btn" @click="handleResetZoom">Reset Zoom</button>
         <button class="discreet-btn" @click="closeFullscreen">Cancel</button>
         <button class="accent-btn" @click="saveAndCloseFullscreen">Save and Close</button>
+        <button class="discreet-btn" @click="handleZoomIn">
+          Zoom in <span class="material-icons-outlined">add</span>
+        </button>
+        <button class="discreet-btn" @click="handleZoomOut">
+          Zoom out <span class="material-icons-outlined">remove</span>
+        </button>
       </div>
     </div>
   </div>
@@ -91,6 +97,17 @@ import KeypointDisplay from '../components/KeypointDisplay.vue'
 
 const keypointRef = ref<InstanceType<typeof KeypointDisplay> | null>(null)
 const isZoomed = ref(false)
+
+function handleZoomIn(): void {
+  alert('zooming in')
+  // set zoomed to true, figure out a cap for zooming and only proceed if cap hasn't been reached yet. If cap reached, gray out button? disable?
+  // zoom in increments relative to scale of original image.
+}
+function handleZoomOut(): void {
+  alert('zooming out')
+  // check if (scale)? is 1, then set zoomed to false. Gray out button/disable button?
+  // zoom out in same increments as zoom in
+}
 
 function handleResetZoom(): void {
   keypointRef.value?.resetZoom()
@@ -110,6 +127,7 @@ const selectedImage = computed(() => imageStore.selectedValidationImage)
 // 'to validate' images have been passed through model, but have yet to be verified by user.
 const imagesToValidate = computed(() => {
   return imageStore.imageList.filter((img: ImageFile) => img.processed && !img.verified)
+  // do I need to have a case accounting for zoom state? Need to make sure this isn't conflicting with saving somehow? Indexdb bug may be coming from here
 })
 
 const confirmClearValidation = (): void => {
