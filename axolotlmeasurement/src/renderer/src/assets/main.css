@@ -125,6 +125,8 @@
   background-color: inherit;
   border: 1px solid var(--bg-col-alt);
   color: var(--bg-col-alt);
+  display: flex;
+  align-items: center;
 }
 
 /* Enhanced Button Styles */

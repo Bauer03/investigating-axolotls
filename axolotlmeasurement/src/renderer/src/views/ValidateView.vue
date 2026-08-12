@@ -73,7 +73,7 @@
         @zoom-changed="isZoomed = $event"
       />
       <div class="fullscreen-buttons flx gp1 jc-end al-c">
-        <span v-if="!isZoomed" class="zoom-hint">Click a keypoint to zoom</span>
+        <span v-if="!isZoomed" class="zoom-hint">Click and drag a keypoint to zoom</span>
         <button v-if="isZoomed" class="discreet-btn" @click="handleResetZoom">Reset Zoom</button>
         <button class="discreet-btn" @click="closeFullscreen">Cancel</button>
         <button class="accent-btn" @click="saveAndCloseFullscreen">Save and Close</button>
@@ -99,14 +99,11 @@ const keypointRef = ref<InstanceType<typeof KeypointDisplay> | null>(null)
 const isZoomed = ref(false)
 
 function handleZoomIn(): void {
-  alert('zooming in')
-  // set zoomed to true, figure out a cap for zooming and only proceed if cap hasn't been reached yet. If cap reached, gray out button? disable?
-  // zoom in increments relative to scale of original image.
+  keypointRef.value?.zoomIn()
 }
+
 function handleZoomOut(): void {
-  alert('zooming out')
-  // check if (scale)? is 1, then set zoomed to false. Gray out button/disable button?
-  // zoom out in same increments as zoom in
+  keypointRef.value?.zoomOut()
 }
 
 function handleResetZoom(): void {

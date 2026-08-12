@@ -71,24 +71,44 @@ const lastMouseY = ref(0)
 
 // Zoom state
 const zoomActive = ref(false)
-const zoomScale = 2
+const zoomScale = ref(1) // Make zoomScale reactive, starting at 100%
 const zoomOriginX = ref(50) // % within container
 const zoomOriginY = ref(50)
+
+// Configurable zoom settings
+const ZOOM_STEP = 0.15 // 20% zoom increment per click
+const MAX_ZOOM = 5.0 // Cap at 400%
+const MIN_ZOOM = 0.4 // Cap at 40%
+
+function zoomIn() {
+  zoomScale.value = Math.min(zoomScale.value + ZOOM_STEP, MAX_ZOOM)
+  zoomActive.value = zoomScale.value !== 1
+  emit('zoom-changed', zoomActive.value)
+}
+
+function zoomOut() {
+  zoomScale.value = Math.max(zoomScale.value - ZOOM_STEP, MIN_ZOOM)
+  zoomActive.value = zoomScale.value !== 1
+  emit('zoom-changed', zoomActive.value)
+}
 
 const containerZoomStyle = computed(() => {
   if (!zoomActive.value) return {}
   return {
-    transform: `scale(${zoomScale})`,
+    transform: `scale(${zoomScale.value})`, // Update to use zoomScale.value
     transformOrigin: `${zoomOriginX.value}% ${zoomOriginY.value}%`
   }
 })
 
 function resetZoom(): void {
+  zoomScale.value = 1
   zoomActive.value = false
+  zoomOriginX.value = 50
+  zoomOriginY.value = 50
   emit('zoom-changed', false)
 }
 
-defineExpose({ resetZoom })
+defineExpose({ resetZoom, zoomIn, zoomOut })
 
 const updateImageDimensions = (): void => {
   if (imageRef.value) {
@@ -124,10 +144,11 @@ function startDrag(event: MouseEvent, index: number): void {
   draggingIndex.value = index
 
   // Activate zoom centered on the clicked keypoint (only on first click)
-  if (!zoomActive.value) {
+if (!zoomActive.value) {
     const kp = scaledKeypoints.value[index]
     zoomOriginX.value = displayedWidth.value > 0 ? (kp.x / displayedWidth.value) * 100 : 50
     zoomOriginY.value = displayedHeight.value > 0 ? (kp.y / displayedHeight.value) * 100 : 50
+    zoomScale.value = 2 // Set the initial click-to-edit zoom level
     zoomActive.value = true
     emit('zoom-changed', true)
   }

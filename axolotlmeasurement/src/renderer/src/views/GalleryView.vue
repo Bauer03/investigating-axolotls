@@ -106,7 +106,7 @@
       />
 
       <div class="fullscreen-buttons flx gp1 jc-end al-c">
-        <span v-if="!isGalleryZoomed" class="zoom-hint">Click a keypoint to zoom</span>
+        <span v-if="!isGalleryZoomed" class="zoom-hint">Click and drag keypoint to zoom</span>
         <button v-if="isGalleryZoomed" class="discreet-btn" @click="handleGalleryResetZoom">
           Reset Zoom
         </button>
@@ -131,10 +131,11 @@ import { ImageFile, Keypoint } from 'src/types'
 import KeypointDisplay from '../components/KeypointDisplay.vue'
 
 function handleZoomIn(): void {
-  alert('zooming in')
+  galleryKeypointRef.value?.zoomIn()
 }
+
 function handleZoomOut(): void {
-  alert('zooming out')
+  galleryKeypointRef.value?.zoomOut()
 }
 
 const imageStore = useImageStore()
